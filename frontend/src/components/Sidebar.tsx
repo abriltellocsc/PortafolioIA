@@ -55,9 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onL
         </ul>
       </nav>
       <div className="mt-8 border-t border-gray-200 pt-4">
-        <div className="mb-4">
-          <GoogleSignInButton variant="header" />
-        </div>
         <button
           onClick={onLogout}
           className="w-full flex items-center p-3 rounded text-red-600 hover:bg-red-50 transition-all duration-200 text-sm font-medium"

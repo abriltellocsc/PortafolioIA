@@ -103,28 +103,64 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ onSuccess, vari
         callback: handleCredentialResponse,
       });
       console.log('[GoogleSignInButton] Google inicializado, renderizando botón...');
-      // Render button into our container
-      if (divRef.current) {
-        // @ts-ignore
-        window.google.accounts.id.renderButton(divRef.current, {
-          theme: variant === 'header' ? 'filled_blue' : 'outline',
-          size: variant === 'header' ? 'medium' : 'large',
-          width: variant === 'header' ? '200' : '100%',
-          text: action === 'signup' ? 'signup_with' : 'signin_with',
-        });
-        console.log('[GoogleSignInButton] Botón renderizado en container');
+      // Render button into our container for header variant only
+      if (variant === 'header') {
+        if (divRef.current) {
+          // @ts-ignore
+          window.google.accounts.id.renderButton(divRef.current, {
+            theme: 'filled_blue',
+            size: 'medium',
+            width: '200',
+            text: action === 'signup' ? 'signup_with' : 'signin_with',
+          });
+          console.log('[GoogleSignInButton] Botón GSI renderizado en header container');
+        } else {
+          console.warn('[GoogleSignInButton] divRef.current no está disponible');
+        }
       } else {
-        console.warn('[GoogleSignInButton] divRef.current no está disponible');
+        // Para modal usaremos un botón HTML personalizado (para poder controlar el texto)
+        console.log('[GoogleSignInButton] GSI inicializado (modal usará botón personalizado)');
       }
     }
   }, []); // Solo ejecutar al montar - handleCredentialResponse está en useCallback con dependencias vacías
+
+  // Handler para el botón personalizado del modal
+  const handleModalClick = () => {
+    // @ts-ignore
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      try {
+        // Mostrar prompt/flux de Google Identity
+        // @ts-ignore
+        window.google.accounts.id.prompt();
+      } catch (e) {
+        console.warn('[GoogleSignInButton] Error al invocar prompt de Google:', e);
+      }
+    } else {
+      console.warn('[GoogleSignInButton] Google Identity Services no está disponible');
+    }
+  };
+
+  if (variant === 'modal') {
+    const label = action === 'signup' ? 'Registrarse con Google' : 'Iniciar sesión con Google';
+    return (
+      <div className="flex justify-center">
+        <button
+          onClick={handleModalClick}
+          className="w-full max-w-md flex items-center justify-center gap-3 px-4 py-2 border rounded-lg hover:bg-gray-100 transition-colors duration-150"
+        >
+          <img src="/google-icon.svg" alt="Google" className="h-5 w-5" />
+          <span className="text-sm font-medium text-gray-800">{label}</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
       ref={divRef}
       style={{
         display: 'flex',
-        justifyContent: variant === 'modal' ? 'center' : 'flex-start',
+        justifyContent: 'flex-start',
         width: '100%',
         minHeight: '44px',
         alignItems: 'center',
