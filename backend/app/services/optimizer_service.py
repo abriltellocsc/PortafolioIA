@@ -1,18 +1,84 @@
 import os
 import json
+import google.generativeai as genai
 from typing import Dict, Any, List
 
-# Nota: google-generativeai 0.1.0rc1 no es compatible con modelos modernos de Google.
-# Si necesitas usar Gemini, actualiza a Python 3.10+ e instala la versión más nueva de google-generativeai.
-# Por ahora, usamos el generador estático que funciona perfectamente.
+# Configurar la API Key
+api_key = os.getenv("API_KEY_GEMINI")
+if api_key:
+    try:
+        genai.configure(api_key=api_key)
+    except Exception as e:
+        print(f"[genai] Error configurando API: {e}")
 
 
 def generate_portfolio(user_profile: Dict[str, Any], preferences: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Genera un portafolio de inversión diversificado e inteligente basado en el perfil del usuario.
-    (Usa el generador estático - compatible con todas las versiones)
+    Genera un portafolio de inversión usando Google Gemini AI.
+    Si falla, usa el generador estático como respaldo.
     """
-    return generate_portfolio_static(user_profile, preferences)
+    if not api_key:
+        print("API_KEY_GEMINI no configurada, usando generador estático.")
+        return generate_portfolio_static(user_profile, preferences)
+
+    prompt = f"""
+    Eres un asesor financiero experto. Crea un portafolio de inversión diversificado e inteligente para un cliente con el siguiente perfil:
+    - Nivel de riesgo tolerado: {user_profile.get('risk_level', 'medio')}
+    - Objetivo de inversión: {user_profile.get('investment_goal', 'crecimiento')}
+    - Nivel de experiencia: {user_profile.get('experience_level', 'intermedio')}
+    - País de residencia: {user_profile.get('country', 'desconocido')}
+    - Monto inicial a invertir: {preferences.get('amount', 10000)} USD
+
+    Reglas:
+    1. Selecciona entre 5 y 8 activos (tickers reales de Yahoo Finance, ej. AAPL, SPY, TLT, BTC-USD).
+    2. La suma de 'allocation_pct' debe ser exactamente 100.
+    3. Adapta los activos a la situación macroeconómica del país del usuario pero mantén diversificación global.
+
+    Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta, sin texto adicional ni formato markdown:
+    {{
+        "assets": [
+            {{
+                "ticker": "Símbolo",
+                "name": "Nombre completo de la empresa o fondo",
+                "allocation_pct": 20.5,
+                "reason": "Justificación breve y profesional de por qué este activo es ideal para este perfil."
+            }}
+        ],
+        "metrics": {{
+            "expected_return": 0.12,
+            "risk": 0.08
+        }}
+    }}
+    """
+
+    try:
+        # Usar generative-ai moderno con GenerativeModel
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(prompt)
+        
+        # Extraer texto de la respuesta
+        response_text = response.text.strip() if hasattr(response, 'text') else str(response).strip()
+        
+        # Limpiar markdown si está envuelto
+        if response_text.startswith("```json"):
+            response_text = response_text[7:-3].strip()
+        elif response_text.startswith("```"):
+            response_text = response_text[3:-3].strip()
+        
+        # Parsear JSON
+        portfolio_data = json.loads(response_text)
+        
+        # Validar estructura
+        if "assets" in portfolio_data and "metrics" in portfolio_data:
+            print("[genai] Portafolio generado exitosamente con Gemini AI")
+            return portfolio_data
+        else:
+            raise ValueError("JSON inválido: falta 'assets' o 'metrics'")
+        
+    except Exception as e:
+        print(f"[genai] Error generando portafolio: {type(e).__name__}: {e}")
+        print("[genai] Usando generador estático como respaldo")
+        return generate_portfolio_static(user_profile, preferences)
 
 
 def generate_portfolio_static(user_profile: Dict[str, Any], preferences: Dict[str, Any]) -> Dict[str, Any]:
