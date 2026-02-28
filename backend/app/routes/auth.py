@@ -180,6 +180,23 @@ async def register_user(user_data: UserRegister = Body(...), background_tasks: B
 
     return {"message": "User registered successfully. Verification email sent if SMTP configured.", "user_id": str(created_user["_id"])}
 
+# endpoint para verificar correo mediante token
+@router.get("/verify-email", response_description="Verifica el email de un usuario")
+async def verify_email(token: Optional[str] = None, email: Optional[str] = None):
+    if not token or not email:
+        raise HTTPException(status_code=400, detail="Token y email requeridos")
+    user = db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.get("email_verified"):
+        return {"message": "Email ya verificado"}
+    if user.get("verification_token") != token:
+        raise HTTPException(status_code=400, detail="Token inválido")
+    if user.get("verification_exp") and datetime.utcnow() > user.get("verification_exp"):
+        raise HTTPException(status_code=400, detail="Token expirado")
+    db.users.update_one({"_id": user["_id"]}, {"$set": {"email_verified": True}, "$unset": {"verification_token": "", "verification_exp": ""}})
+    return {"message": "Email verificado correctamente"}
+
 @router.post("/login", response_description="Login user")
 async def user_login(user_credentials: Dict[str, str] = Body(...)):
     user = db.users.find_one({"email": user_credentials["email"]})
