@@ -33,7 +33,7 @@ body {
 /* Animated particles */
 .particles-container {
   position: absolute;
-  inset: 0;
+  inset: 0,50;
   overflow: hidden;
 }
 
