@@ -6,7 +6,7 @@ export const forgotPasswordRequest = (email: string) => api.post('/auth/forgot-p
 export const adminRegeneratePortfolio = (userId: string) => api.post('/optimize', { user_id: userId });
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
 const api = axios.create({
   baseURL: API_URL,

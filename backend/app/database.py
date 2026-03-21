@@ -1,30 +1,24 @@
-from pymongo import MongoClient
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-MONGODB_URI = os.getenv("MONGODB_URI")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    # Fallback for development (replace with your actual connection string)
+    DATABASE_URL = "postgresql://postgres:Bobyapolo29%40@db.xkzedzyzfnpzlgoqoamy.supabase.co:5432/postgres"
 
-# Lazy connection - only connect when needed
-_client = None
-_db = None
+engine = create_engine(DATABASE_URL, echo=True)  # echo=True para debugging, quitar en producción
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def get_client():
-    global _client
-    if _client is None:
-        _client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-    return _client
+Base = declarative_base()
 
-def get_db():
-    global _db
-    if _db is None:
-        _db = get_client().portafolioAI
-    return _db
-
-# For backwards compatibility, expose db as a module-level property
-class _DBProxy:
-    def __getattr__(self, name):
-        return getattr(get_db(), name)
-
-db = _DBProxy()
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

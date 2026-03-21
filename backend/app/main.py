@@ -4,6 +4,10 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.routes import auth, portfolio, profile, stocks
 from app.routes import admin_users, admin_portfolios, admin_support
+from app.database import Base, engine  # Importar para referencias
+
+# Las tablas se crean con Alembic, no aquí
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="PortafolioAI API",

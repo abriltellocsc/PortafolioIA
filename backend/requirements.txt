@@ -1,7 +1,6 @@
 fastapi
 uvicorn[standard]
 pydantic
-pymongo
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
@@ -17,3 +16,6 @@ google-auth-oauthlib
 requests
 google-genai
 packaging
+sqlalchemy
+psycopg2-binary
+alembic

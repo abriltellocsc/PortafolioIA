@@ -5,22 +5,21 @@ try:
 except ImportError:
     from typing_extensions import Annotated
 from datetime import datetime
-from bson import ObjectId
-from app.database import db
+from app.database import get_db
 from app.models.user import User
-from app.models.portfolio import Portfolio, PortfolioCreate
+from app.models.portfolio import Portfolio, Asset
 from app.routes.auth import get_current_user
 from app.services.optimizer_service import generate_portfolio
-## Chatbot eliminado: no se importa ni usa explain_concept
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
 @router.post("/optimize", response_description="Generate and save user portfolio")
 async def optimize_portfolio(
-    current_user: Annotated[User, Depends(get_current_user)],
-    portfolio_data: Dict[str, Any] = Body(...)
+    current_user: User = Depends(get_current_user),
+    portfolio_data: Dict[str, Any] = Body(...),
+    db: Session = Depends(get_db)
 ):
-    user_id = str(current_user["_id"])
     user_profile = {
         "risk_level": portfolio_data.get("risk_level"),
         "investment_goal": portfolio_data.get("investment_goal"),
@@ -29,75 +28,87 @@ async def optimize_portfolio(
     }
     preferences = portfolio_data.get("preferences", {})
 
-    # Generar portafolio usando el servicio de optimización (simple o avanzado)
+    # Generar portafolio usando el servicio de optimización
     optimized_portfolio = generate_portfolio(user_profile, preferences)
 
-    # Opcional: Usar Gemini para generar el portafolio (si está configurado y se desea)
-    # gemini_portfolio_response = generate_portfolio_prompt(user_profile, preferences)
-    # if gemini_portfolio_response and "assets" in gemini_portfolio_response:
-    #     optimized_portfolio["assets"] = gemini_portfolio_response["assets"]
-    #     optimized_portfolio["metrics"] = gemini_portfolio_response["metrics"]
-
-    # Usar PortfolioCreate para la creación inicial
-    new_portfolio_data = PortfolioCreate(
-        user_id=user_id,
-        assets=optimized_portfolio["assets"],
+    # Crear Portfolio
+    new_portfolio = Portfolio(
+        user_id=current_user.id,
+        assets=[],  # Se agregarán después
         metrics=optimized_portfolio["metrics"]
     )
+    db.add(new_portfolio)
+    db.commit()
+    db.refresh(new_portfolio)
+
+    # Crear Assets
+    for asset_data in optimized_portfolio["assets"]:
+        asset = Asset(
+            portfolio_id=new_portfolio.id,
+            ticker=asset_data["ticker"],
+            name=asset_data["name"],
+            allocation_pct=asset_data["allocation_pct"],
+            reason=asset_data.get("reason")
+        )
+        db.add(asset)
+    db.commit()
+
+    # Recargar con assets
+    db.refresh(new_portfolio)
     
-    # Guardar el portafolio en la base de datos
-    inserted_portfolio = db.portfolios.insert_one(new_portfolio_data.model_dump(by_alias=True, exclude_unset=True))
-    created_portfolio = db.portfolios.find_one({"_id": inserted_portfolio.inserted_id})
-    
-    # Convertir ObjectId a string para poder serializar la respuesta
-    if created_portfolio and "_id" in created_portfolio:
-        created_portfolio["_id"] = str(created_portfolio["_id"])
-    
-    return created_portfolio
+    return {
+        "id": new_portfolio.id,
+        "user_id": new_portfolio.user_id,
+        "generated_at": new_portfolio.generated_at,
+        "assets": [{"ticker": a.ticker, "name": a.name, "allocation_pct": a.allocation_pct, "reason": a.reason} for a in new_portfolio.assets],
+        "metrics": new_portfolio.metrics
+    }
 
 @router.get("/portfolio/{user_id}", response_description="Get user portfolio and simulations")
-async def get_user_portfolio(user_id: str, current_user: Annotated[User, Depends(get_current_user)]):
-    if str(current_user["_id"]) != user_id:
+async def get_user_portfolio(user_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if str(current_user.id) != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this portfolio")
     
-    portfolio = db.portfolios.find_one({"user_id": user_id})
+    portfolio = db.query(Portfolio).filter(Portfolio.user_id == int(user_id)).first()
     if portfolio:
-        # Convert ObjectId fields to string for serialization
-        if "_id" in portfolio:
-            portfolio["_id"] = str(portfolio["_id"])
-        # Also convert asset IDs if present
-        if "assets" in portfolio and isinstance(portfolio["assets"], list):
-            for asset in portfolio["assets"]:
-                if isinstance(asset, dict) and "_id" in asset and isinstance(asset["_id"], ObjectId):
-                    asset["_id"] = str(asset["_id"])
-        return portfolio
+        return {
+            "id": portfolio.id,
+            "user_id": portfolio.user_id,
+            "generated_at": portfolio.generated_at,
+            "assets": [{"ticker": a.ticker, "name": a.name, "allocation_pct": a.allocation_pct, "reason": a.reason} for a in portfolio.assets],
+            "metrics": portfolio.metrics,
+            "simulation_history": portfolio.simulation_history
+        }
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
 
 @router.post("/simulate", response_description="Execute or save a simulation")
 async def simulate_portfolio(
-    current_user: Annotated[User, Depends(get_current_user)],
-    simulation_data: Dict[str, Any] = Body(...)
+    current_user: User = Depends(get_current_user),
+    simulation_data: Dict[str, Any] = Body(...),
+    db: Session = Depends(get_db)
 ):
-    user_id = str(current_user["_id"])
     portfolio_id = simulation_data.get("portfolio_id")
     if not portfolio_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Portfolio ID is required for simulation")
 
+    portfolio = db.query(Portfolio).filter(Portfolio.id == int(portfolio_id), Portfolio.user_id == current_user.id).first()
+    if not portfolio:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found or not authorized")
+
     # Aquí iría la lógica de simulación. Por ahora, solo guardamos los datos.
-    # En una implementación real, esto ejecutaría cálculos complejos.
     simulation_result = {
         "timestamp": datetime.utcnow().isoformat(),
         "params": simulation_data.get("params"),
         "result": {"mock_performance": [10000, 10100, 10250, 10400, 10500]}
     }
 
-    update_result = db.portfolios.update_one(
-        {"_id": ObjectId(portfolio_id), "user_id": user_id},
-        {"$push": {"simulation_history": simulation_result}}
-    )
+    # Actualizar simulation_history
+    if portfolio.simulation_history is None:
+        portfolio.simulation_history = []
+    portfolio.simulation_history.append(simulation_result)
+    db.commit()
 
-    if update_result.modified_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found or not authorized")
+    return {"message": "Simulation saved successfully"}
     
     return {"message": "Simulation saved successfully", "simulation": simulation_result}
 
