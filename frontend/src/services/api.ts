@@ -65,6 +65,7 @@ export const removeAuthToken = () => {
 export const registerUser = (userData: any) => api.post('/auth/register', userData);
 export const loginUser = (credentials: any) => api.post('/auth/login', credentials);
 export const fetchCurrentUser = () => api.get('/auth/me');
+export const logoutUser = () => api.post('/auth/logout');
 
 // Funciones de perfil y portafolio
 export const saveRiskProfile = (profileData: any) => api.post('/risk-profile', profileData);

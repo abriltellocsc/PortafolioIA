@@ -9,7 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import RiskProfileForm from './components/RiskProfileForm';
 import AnimatedBackground from './components/AnimatedBackground';
-import { getAuthToken, removeAuthToken, fetchCurrentUser, fetchUserPortfolio } from './services/api';
+import { getAuthToken, removeAuthToken, fetchCurrentUser, fetchUserPortfolio, logoutUser } from './services/api';
 import AboutUs from './pages/AboutUs';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -140,12 +140,31 @@ function App() {
   };
 
   // Función para cerrar sesión
-  const handleLogout = () => {
-    removeAuthToken();
-    setIsAuthenticated(false);
-    setPortfolio(null);
-    setUserName('');
-    window.location.href = '/';
+  // Función para cerrar sesión
+  const handleLogout = async () => {
+    try {
+      // Intentar notificar al backend del logout
+      await logoutUser();
+      console.log('Logout realizado en el backend');
+    } catch (error) {
+      // Si falla la llamada al backend (ej: token expirado), continuar de todas formas
+      console.log('Note: No se pudo contactar al backend para logout (posiblemente token expirado):', error);
+    } finally {
+      // Limpiar localStorage y estado local sin importar si el backend respondió
+      removeAuthToken();
+      localStorage.removeItem('user_id');
+      
+      // Resetear todo el estado de la aplicación
+      setIsAuthenticated(false);
+      setPortfolio(null);
+      setUserName('');
+      setIsAdmin(false);
+      
+      console.log('Sesión cerrada: estado local limpiado');
+      
+      // Redirigir a la página de inicio
+      window.location.href = '/';
+    }
   };
 
   // Función llamada cuando se genera un portafolio

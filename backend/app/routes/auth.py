@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Body
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse
@@ -100,7 +101,7 @@ def send_verification_email(to_email: str, token: str):
             smtp.quit()
             print(f"Email de verificación enviado a {to_email}")
         else:
-            print(f"SMTP no configurado. Mostrar enlace de verificación en logs: {verify_link}")
+            print(f"SMTP no configurado. Enlace de verificación: {verify_link}")
     except Exception as e:
         print(f"Error enviando email de verificación: {e}")
 
@@ -140,7 +141,7 @@ def require_admin(current_user: User = Depends(get_current_user)):
 
 
 # ============================================================================
-# Routes
+# Routes - Authentication
 # ============================================================================
 
 @router.post("/register", response_description="Register new user")
@@ -250,8 +251,40 @@ async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_d
     return {"message": "Contraseña actualizada correctamente"}
 
 
+@router.post("/logout", response_description="Cerrar sesión del usuario")
+async def logout(current_user: User = Depends(get_current_user)):
+    """
+    Endpoint de logout. Valida el token JWT y confirma el cierre de sesión.
+    El cliente es responsable de eliminar el token del localStorage.
+    """
+    return {
+        "message": "Sesión cerrada correctamente",
+        "user_id": current_user.id,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@router.get("/debug/google-config", response_description="Verificar configuración de Google")
+async def debug_google_config():
+    """Debug: Verificar qué está configurado para Google Auth"""
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    google_available = GOOGLE_AUTH_AVAILABLE
+    
+    return {
+        "google_auth_available": google_available,
+        "has_client_id": bool(client_id),
+        "client_id_first_chars": client_id[:20] + "..." if client_id else None,
+        "redirect_uri": redirect_uri,
+        "google_libraries": {
+            "google_id_token": google_id_token is not None,
+            "google_requests": google_requests is not None
+        }
+    }
+
+
 # ============================================================================
-# Google OAuth2
+# Routes - Google OAuth2
 # ============================================================================
 
 @router.post("/google/verify", response_description="Verify Google id_token and create/update user")
@@ -274,6 +307,7 @@ async def google_verify(payload: dict = Body(...), db: Session = Depends(get_db)
 
     user = db.query(User).filter(User.google_id == google_id).first() or db.query(User).filter(User.email == email).first()
     now = datetime.utcnow()
+    
     if user:
         user.email = email
         user.name = name
@@ -341,12 +375,12 @@ async def google_callback(code: Optional[str] = None, state: Optional[str] = Non
         raise HTTPException(status_code=400, detail="Token exchange failed")
     token_json = token_resp.json()
     id_token = token_json.get("id_token")
-    try:
-        request_adapter = google_requests.Request()
-        info = google_id_token.verify_oauth2_token(id_token, request_adapter, os.getenv("GOOGLE_CLIENT_ID"))
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid id_token")
-
+    if not id_token:
+        raise HTTPException(status_code=400, detail="No id_token in response")
+    
+    request_adapter = google_requests.Request()
+    info = google_id_token.verify_oauth2_token(id_token, request_adapter, os.getenv("GOOGLE_CLIENT_ID"))
+    
     google_id = info.get("sub")
     email = info.get("email")
     name = info.get("name") or email
@@ -354,6 +388,7 @@ async def google_callback(code: Optional[str] = None, state: Optional[str] = Non
 
     user = db.query(User).filter(User.google_id == google_id).first() or db.query(User).filter(User.email == email).first()
     now = datetime.utcnow()
+    
     if user:
         user.email = email
         user.name = name
@@ -382,4 +417,39 @@ async def google_callback(code: Optional[str] = None, state: Optional[str] = Non
     frontend = os.getenv("FRONTEND_URL", "http://localhost:5173")
     access = app_token["access_token"] if isinstance(app_token, dict) and app_token.get("access_token") else app_token
     redirect_to = f"{frontend}/auth/callback?token={access}"
+    return RedirectResponse(redirect_to)
+
+    return RedirectResponse(redirect_to)
+
+
+@router.post("/logout", response_description="Cerrar sesión del usuario")
+async def logout(current_user: User = Depends(get_current_user)):
+    """
+    Endpoint de logout. Valida el token JWT y confirma el cierre de sesión.
+    El cliente es responsable de eliminar el token del localStorage.
+    """
+    return {
+        "message": "Sesión cerrada correctamente",
+        "user_id": current_user.id,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@router.get("/debug/google-config", response_description="Verificar configuración de Google")
+async def debug_google_config():
+    """Debug: Verificar qué está configurado para Google Auth"""
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    google_available = GOOGLE_AUTH_AVAILABLE
+    
+    return {
+        "google_auth_available": google_available,
+        "has_client_id": bool(client_id),
+        "client_id_first_chars": client_id[:20] + "..." if client_id else None,
+        "redirect_uri": redirect_uri,
+        "google_libraries": {
+            "google_id_token": google_id_token is not None,
+            "google_requests": google_requests is not None
+        }
+    }
     return RedirectResponse(redirect_to)

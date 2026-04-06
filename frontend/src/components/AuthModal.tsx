@@ -262,6 +262,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, 
           </button>
         </form>
 
+        {/* Separador visual */}
+        <div className="relative mt-6 mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-3 bg-white text-gray-500 font-medium">O continúa con</span>
+          </div>
+        </div>
+
         {/* Botón de inicio con Google */}
         <div className="mt-4">
             <GoogleSignInButton variant="modal" action={isRegister ? 'signup' : 'signin'} onSuccess={() => onLoginSuccess('login')} />
