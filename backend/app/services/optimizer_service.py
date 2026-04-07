@@ -138,6 +138,27 @@ def calculate_metrics(prices: pd.DataFrame, weights: Dict[str, float]) -> Dict[s
     }
 
 
+def normalize_metrics(metrics: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normaliza métricas a estructura estándar con campos validados.
+    Convierte 'volatility' a 'risk' si es necesario.
+    Asegura que no hay NaN ni valores inválidos.
+    """
+    normalized = {
+        "expected_return": float(metrics.get("expected_return", 0.0)) or 0.0,
+        "risk": float(metrics.get("risk", metrics.get("volatility", 0.0)) or 0.0),
+        "sharpe_ratio": float(metrics.get("sharpe_ratio", 0.0)) or 0.0,
+        "max_drawdown": float(metrics.get("max_drawdown", 0.0)) or 0.0
+    }
+    
+    # Reemplazar NaN con 0
+    for key in normalized:
+        if str(normalized[key]) == 'nan' or normalized[key] is None:
+            normalized[key] = 0.0
+    
+    return normalized
+
+
 
 
 def generate_portfolio(user_profile: Dict[str, Any], preferences: Dict[str, Any]) -> Dict[str, Any]:
@@ -236,10 +257,13 @@ def generate_portfolio_random(user_profile: Dict[str, Any], preferences: Dict[st
                 "expected_return": metrics["expected_return"],
                 "volatility": metrics["volatility"]
             })
+        # Normalizar métricas para consistencia
+        normalized_metrics = normalize_metrics(metrics)
+        
         result = {
             "portfolio": portfolio,
             "total_allocation": sum(w for w in weights.values() if w > 0) * 100,
-            "portfolio_metrics": metrics,
+            "portfolio_metrics": normalized_metrics,
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "seed": seed
         }
@@ -253,7 +277,7 @@ def generate_portfolio_random(user_profile: Dict[str, Any], preferences: Dict[st
                 "reason": item.get("reason", "")
             })
         result["assets"] = assets
-        result["metrics"] = metrics
+        result["metrics"] = normalized_metrics
         return result
     except Exception as e:
         print(f"[random] Error generando portafolio aleatorio: {e}")
@@ -263,9 +287,12 @@ def generate_portfolio_random(user_profile: Dict[str, Any], preferences: Dict[st
 
 def generate_portfolio_static(user_profile: Dict[str, Any], preferences: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Versión estática original (Respaldo)
+    Versión estática original mejorada (Respaldo)
+    Ahora considera: risk_level, investment_goal, experience_level
     """
-    risk_level = user_profile.get("risk_level", "medium")
+    risk_level = user_profile.get("risk_level", "medium").lower()
+    investment_goal = user_profile.get("investment_goal", "growth").lower()
+    experience_level = user_profile.get("experience_level", "intermediate").lower()
     
     EXTENDED_ASSETS = [
         {"ticker": "TLT", "name": "iShares 20+ Year Treasury Bond ETF", "reason": "Bonos del tesoro estadounidense a largo plazo."},
@@ -278,28 +305,61 @@ def generate_portfolio_static(user_profile: Dict[str, Any], preferences: Dict[st
         {"ticker": "GLD", "name": "SPDR Gold Trust", "reason": "Oro físico, protección contra inflación."}
     ]
 
+    # Base expectations por risk level
+    risk_params = {
+        "low": {"expected_return": 0.04, "risk": 0.02, "num_assets": 5},
+        "medium": {"expected_return": 0.08, "risk": 0.06, "num_assets": 6},
+        "high": {"expected_return": 0.15, "risk": 0.12, "num_assets": 7}
+    }
+    
+    # Ajustes por investment goal
+    goal_adjustment = {
+        "retirement": {"return_mult": 0.8, "risk_mult": 0.7},  # Más conservador para retiro
+        "house": {"return_mult": 0.9, "risk_mult": 0.8},       # Moderadamente conservador
+        "growth": {"return_mult": 1.0, "risk_mult": 1.0},      # Base
+        "income": {"return_mult": 0.7, "risk_mult": 0.6}       # Muy conservador
+    }
+    
+    # Ajustes por experience level
+    exp_adjustment = {
+        "beginner": {"return_mult": 0.7, "risk_mult": 0.6},    # Más conservador
+        "intermediate": {"return_mult": 1.0, "risk_mult": 1.0}, # Base
+        "advanced": {"return_mult": 1.2, "risk_mult": 1.1}     # Más agresivo
+    }
+    
+    # Seleccionar parámetros base
+    base_params = risk_params.get(risk_level, risk_params["medium"])
+    goal_adj = goal_adjustment.get(investment_goal, goal_adjustment["growth"])
+    exp_adj = exp_adjustment.get(experience_level, exp_adjustment["intermediate"])
+    
+    # Aplicar ajustes
+    expected_return = base_params["expected_return"] * goal_adj["return_mult"] * exp_adj["return_mult"]
+    risk = base_params["risk"] * goal_adj["risk_mult"] * exp_adj["risk_mult"]
+    num_assets_base = base_params["num_assets"]
+    
+    # Seleccionar assets según el perfil
     if risk_level == "low":
-        selected = EXTENDED_ASSETS[:5]
-        allocations = [35, 25, 15, 15, 10]
-        expected_return = 0.05
-        risk = 0.03
+        selected = EXTENDED_ASSETS[:3] + EXTENDED_ASSETS[4:5]  # Bonos y ETFs seguros
+        allocations = [40, 30, 20, 10]
     elif risk_level == "medium":
-        selected = EXTENDED_ASSETS[:7]
-        allocations = [25, 15, 15, 15, 10, 10, 10]
-        expected_return = 0.10
-        risk = 0.08
-    else: 
+        if investment_goal == "income":
+            # Más fokus en dividend-paying stocks
+            selected = EXTENDED_ASSETS[1:4] + EXTENDED_ASSETS[4:6]
+            allocations = [30, 20, 15, 20, 15]
+        else:
+            selected = EXTENDED_ASSETS[:7]
+            allocations = [20, 15, 15, 15, 15, 10, 10]
+    else:  # high
+        # Incluir más growth y tech
         selected = EXTENDED_ASSETS[:8]
-        allocations = [20, 15, 15, 15, 10, 10, 10, 5]
-        expected_return = 0.18
-        risk = 0.15
+        allocations = [15, 15, 20, 10, 15, 15, 5, 5]
 
     portfolio_assets = []
     for i, asset in enumerate(selected):
         portfolio_assets.append({
             "ticker": asset["ticker"],
             "name": asset["name"],
-            "allocation_pct": allocations[i],
+            "allocation_pct": allocations[i] if i < len(allocations) else (100 - sum(allocations)) / len(selected),
             "reason": asset["reason"]
         })
 

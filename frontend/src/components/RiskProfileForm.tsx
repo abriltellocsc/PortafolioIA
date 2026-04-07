@@ -110,11 +110,14 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
     };
 
     try {
-      // Guardar el perfil de riesgo
-      await saveRiskProfile(riskProfileData);
-
-      // Optimizar el portafolio
+      // Primero intentar OPTIMIZAR el portafolio (para validar límites)
+      // Si esto falla, no guardamos el perfil de riesgo
       const portfolioResponse = await optimizePortfolio(riskProfileData);
+      console.log('[RiskProfileForm] Portafolio optimizado exitosamente');
+
+      // Solo después de éxito, guardar el perfil de riesgo
+      await saveRiskProfile(riskProfileData);
+      console.log('[RiskProfileForm] Perfil de riesgo guardado exitosamente');
 
       // Obtener el portafolio actualizado desde el backend
       const userId = localStorage.getItem('user_id');
@@ -152,6 +155,17 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
 
       {/* Contenedor del formulario */}
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-8 md:p-10 max-w-2xl w-full animate-fade-in relative z-10">
+        {/* Botón Volver */}
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center text-blue-900 hover:text-blue-700 font-semibold transition duration-200"
+          >
+            ← Volver
+          </button>
+        </div>
+
         {/* Título */}
         <h2 className="text-3xl md:text-4xl font-bold text-blue-900 text-center mb-2">Perfil de Riesgo</h2>
         <p className="text-center text-gray-600 mb-8">Responde 5 preguntas para que la IA genere tu portafolio personalizado</p>

@@ -14,9 +14,10 @@ interface DashboardProps {
   portfolio: any;
   isAdmin?: boolean;
   userName?: string;
+  isUserPremium?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout, portfolio, isAdmin, userName }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, portfolio, isAdmin, userName, isUserPremium }) => {
   const location = useLocation();
   const [activePage, setActivePage] = useState<string>(
     location.pathname.split('/')[2] || 'overview'
@@ -44,23 +45,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, portfolio, isAdmin, use
       </div>
 
       {/* Sidebar */}
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onLogout={onLogout} isAdmin={isAdmin} userName={userName} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} onLogout={onLogout} isAdmin={isAdmin} userName={userName} isUserPremium={isUserPremium} />
       
       {/* Main Content con margen para el Sidebar */}
       <div className="flex-1 flex flex-col ml-72 relative z-10">
         <header className="bg-white shadow-sm p-4 flex justify-between items-center border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-blue-900">{getPageTitle(activePage)}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{getPageTitle(activePage)}</h1>
+          {/* Premium Badge en la esquina superior derecha */}
+          {isUserPremium ? (
+            <div className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold rounded-full shadow-lg">
+              Premium
+            </div>
+          ) : (
+            <div className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-full">
+              Gratuito
+            </div>
+          )}
         </header>
         <main className="flex-1 p-6 overflow-y-auto">
           <Routes>
-            <Route path="overview" element={<DashboardOverview portfolio={portfolio} />} />
+            <Route path="overview" element={<DashboardOverview portfolio={portfolio} isUserPremium={isUserPremium} />} />
             <Route path="recommendations" element={<RecommendationsPage portfolio={portfolio} />} />
             <Route path="my-portfolio" element={<MyPortfolioPage portfolio={portfolio} />} />
             <Route path="simulator" element={<SimulatorPage portfolio={portfolio} />} />
             <Route path="education" element={<EducationPage />} />
             <Route path="news" element={<NewsPage />} />
             <Route path="support" element={<SupportPage />} />
-            <Route path="*" element={<DashboardOverview portfolio={portfolio} />} /> {/* Default route */}
+            <Route path="*" element={<DashboardOverview portfolio={portfolio} isUserPremium={isUserPremium} />} /> {/* Default route */}
           </Routes>
         </main>
       </div>

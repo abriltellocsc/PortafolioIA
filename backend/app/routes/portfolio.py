@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.portfolio import Portfolio, Asset
 from app.routes.auth import get_current_user
-from app.services.optimizer_service import generate_portfolio
+from app.services.optimizer_service import generate_portfolio, get_market_data, calculate_metrics, normalize_metrics
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -20,6 +20,15 @@ async def optimize_portfolio(
     portfolio_data: Dict[str, Any] = Body(...),
     db: Session = Depends(get_db)
 ):
+    # Validar límite de portafolios para usuarios gratuitos
+    if not current_user.is_premium:
+        portfolio_count = db.query(Portfolio).filter(Portfolio.user_id == current_user.id).count()
+        if portfolio_count >= 3:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Plan Gratuito: máximo 3 portafolios. Mejora a Premium para crear portafolios ilimitados."
+            )
+    
     user_profile = {
         "risk_level": portfolio_data.get("risk_level"),
         "investment_goal": portfolio_data.get("investment_goal"),
@@ -30,6 +39,57 @@ async def optimize_portfolio(
 
     # Generar portafolio usando el servicio de optimización
     optimized_portfolio = generate_portfolio(user_profile, preferences)
+
+    # MEJORA: Recalcular métricas basadas en datos históricos reales de los activos
+    metrics_recalculated = False
+    try:
+        print(f"[portfolio] Intentando recalcular métricas basadas en datos históricos...")
+        tickers = [asset["ticker"] for asset in optimized_portfolio["assets"]]
+        allocation_pct = [asset["allocation_pct"] for asset in optimized_portfolio["assets"]]
+        
+        print(f"[portfolio] Tickers: {tickers}, Asignaciones: {allocation_pct}")
+        
+        # Obtener datos históricos
+        prices = get_market_data(tickers)
+        
+        if prices is None or prices.empty:
+            raise ValueError("No se obtuvieron precios")
+        
+        print(f"[portfolio] Precios obtenidos: {prices.shape}")
+        
+        # Crear diccionario de pesos para calculate_metrics
+        weights = {ticker: (alloc / 100.0) for ticker, alloc in zip(tickers, allocation_pct)}
+        
+        print(f"[portfolio] Pesos calculados: {weights}")
+        
+        # Calcular métricas reales basadas en datos históricos
+        real_metrics = calculate_metrics(prices, weights)
+        
+        print(f"[portfolio] Métricas reales antes de normalizar: {real_metrics}")
+        
+        # Normalizar para consistencia (convierte volatility a risk)
+        normalized_metrics = normalize_metrics(real_metrics)
+        
+        print(f"[portfolio] Métricas normalizadas: {normalized_metrics}")
+        
+        # Reemplazar las métricas generadas por Gemini/random con métricas reales normalizadas
+        optimized_portfolio["metrics"] = normalized_metrics
+        print(f"✅ Métricas recalculadas exitosamente: {optimized_portfolio['metrics']}")
+        metrics_recalculated = True
+        
+    except Exception as e:
+        print(f"⚠️ Error recalculando métricas reales: {e}")
+        # Si falla, usar las métricas generadas por Gemini/random
+        # pero asegurar que sean normalizadas también
+        if optimized_portfolio.get("metrics"):
+            optimized_portfolio["metrics"] = normalize_metrics(optimized_portfolio.get("metrics", {}))
+            print(f"[portfolio] Usando métricas normalizadas generadas: {optimized_portfolio['metrics']}")
+        else:
+            print(f"❌ ADVERTENCIA: metrics está vacío, usando valores por defecto")
+            optimized_portfolio["metrics"] = normalize_metrics({})
+    
+    # Validación final: asegurar que não hay NaN
+    print(f"[portfolio] Métricas finales antes de guardar: {optimized_portfolio.get('metrics')}")
 
     # Crear Portfolio
     new_portfolio = Portfolio(
@@ -69,7 +129,9 @@ async def get_user_portfolio(user_id: str, current_user: User = Depends(get_curr
     if str(current_user.id) != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this portfolio")
     
-    portfolio = db.query(Portfolio).filter(Portfolio.user_id == int(user_id)).first()
+    # Obtener el portafolio MÁS RECIENTE (order by generated_at DESC)
+    from sqlalchemy import desc
+    portfolio = db.query(Portfolio).filter(Portfolio.user_id == int(user_id)).order_by(desc(Portfolio.generated_at)).first()
     if portfolio:
         return {
             "id": portfolio.id,

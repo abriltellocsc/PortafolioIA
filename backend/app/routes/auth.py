@@ -74,20 +74,73 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def send_reset_email(to_email: str, token: str):
     msg = EmailMessage()
-    msg["Subject"] = "Recuperación de contraseña PortafolioAI"
+    msg["Subject"] = "Recuperación de contraseña - PortafolioIA"
     msg["From"] = "no-reply@portafolioai.com"
     msg["To"] = to_email
-    msg.set_content(f"Para recuperar tu contraseña, usa este código: {token}")
-    print(f"Email de recuperación enviado a {to_email} con token: {token}")
+    reset_link = os.getenv("FRONTEND_URL", "http://localhost:5173") + f"/reset-password?token={token}&email={to_email}"
+    
+    body = f"""
+Hola,
+
+Recibimos una solicitud para restablecer tu contraseña de PortafolioIA.
+
+Haz clic en el siguiente enlace para crear una nueva contraseña:
+{reset_link}
+
+O copia y pega este enlace en tu navegador si el anterior no funciona.
+
+Este enlace expirará en 1 hora por razones de seguridad.
+
+Si no solicitaste un restablecimiento de contraseña, ignora este mensaje.
+
+Saludos,
+Equipo PortafolioIA
+"""
+    msg.set_content(body)
+    
+    try:
+        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_user = os.getenv("SMTP_USER")
+        smtp_pass = os.getenv("SMTP_PASS")
+        if smtp_user and smtp_pass:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+            print(f"✅ Email de recuperación enviado a {to_email}")
+        else:
+            print(f"⚠️ SMTP no configurado, email no enviado a {to_email}")
+    except Exception as e:
+        print(f"❌ Error enviando email de recuperación: {e}")
 
 
 def send_verification_email(to_email: str, token: str):
     msg = EmailMessage()
-    msg["Subject"] = "Verifica tu correo en PortafolioAI"
+    msg["Subject"] = "Verifica tu cuenta en PortafolioIA"
     msg["From"] = "no-reply@portafolioai.com"
     msg["To"] = to_email
     verify_link = os.getenv("FRONTEND_URL", "http://localhost:5173") + f"/verify-email?token={token}&email={to_email}"
-    msg.set_content(f"Gracias por registrarte en PortafolioAI. Haz clic en el siguiente enlace para verificar tu correo:\n\n{verify_link}\n\nSi no solicitaste esto, ignora este mensaje.")
+    
+    body = f"""
+Hola,
+
+Gracias por registrarte en PortafolioIA. Para completar tu registro y acceder a tu cuenta, debe verificar tu dirección de correo electrónico.
+
+Haz clic en el siguiente enlace para verificar tu email:
+{verify_link}
+
+O copia y pega este enlace en tu navegador si el anterior no funciona.
+
+Este enlace expirará en 24 horas por razones de seguridad.
+
+Si no creaste esta cuenta, ignora este mensaje.
+
+Saludos,
+Equipo PortafolioIA
+"""
+    msg.set_content(body)
+    
     try:
         smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
         smtp_port = int(os.getenv("SMTP_PORT", "587"))
@@ -99,11 +152,11 @@ def send_verification_email(to_email: str, token: str):
             smtp.login(smtp_user, smtp_pass)
             smtp.send_message(msg)
             smtp.quit()
-            print(f"Email de verificación enviado a {to_email}")
+            print(f"✅ Email de verificación enviado a {to_email}")
         else:
-            print(f"SMTP no configurado. Enlace de verificación: {verify_link}")
+            print(f"⚠️ SMTP no configurado. Enlace de verificación: {verify_link}")
     except Exception as e:
-        print(f"Error enviando email de verificación: {e}")
+        print(f"❌ Error enviando email de verificación: {e}")
 
 
 # ============================================================================
@@ -184,9 +237,19 @@ async def register_user(user_data: UserRegister = Body(...), background_tasks: B
 @router.post("/login", response_description="Login user")
 async def user_login(user_credentials: Dict[str, str] = Body(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_credentials["email"]).first()
-    if user and verify_password(user_credentials["password"], user.password_hash):
-        return signJWT(str(user.id), user.role)
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Verificar que el usuario existe y la contraseña es correcta
+    if not user or not verify_password(user_credentials["password"], user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Verificar que el email ha sido verificado
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Email no verificado. Por favor, verifica tu email antes de ingresar."
+        )
+    
+    return signJWT(str(user.id), user.role)
 
 
 @router.get("/me", response_description="Get current user")
@@ -197,6 +260,9 @@ async def get_me(current_user: User = Depends(get_current_user), db: Session = D
         "name": current_user.name,
         "email": current_user.email,
         "role": current_user.role,
+        "is_premium": current_user.is_premium,
+        "subscription_id": current_user.subscription_id,
+        "contador_ia": current_user.contador_ia,
         "portfolio": portfolio
     }
     return user_dict

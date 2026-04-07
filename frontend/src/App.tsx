@@ -14,6 +14,10 @@ import AboutUs from './pages/AboutUs';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AuthCallback from './pages/AuthCallback';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import PlanPage from './pages/PlanPage';
 // Importar componentes de admin
 import AdminDashboard from './pages/Admin/AdminDashboard';
 // Eliminar referencias a LogsAudit y SupportMessages
@@ -32,6 +36,8 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // Estado para saber si el usuario es admin
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  // Estado para saber si el usuario es premium
+  const [isUserPremium, setIsUserPremium] = useState<boolean>(false);
 
   // Función para obtener el portafolio y rol del usuario desde el backend
   const fetchPortfolio = useCallback(async () => {
@@ -47,10 +53,13 @@ function App() {
       } else {
         setUserName('');
       }
+      // Verificar si el usuario es premium - ACTUALIZAR SIEMPRE
+      setIsUserPremium(response.data?.is_premium || false);
       // Verificar si el usuario es admin (ajusta según tu backend)
       const isAdminUser = response.data?.role === 'admin';
       setIsAdmin(isAdminUser);
       console.log('Valor de isAdmin:', isAdminUser); // LOG para depuración
+      console.log('Valor de isUserPremium:', response.data?.is_premium); // LOG para depuración
 
       // Obtener el user_id y luego el portafolio
       const userId = response.data?._id || response.data?.id || response.data?.user_id;
@@ -99,6 +108,7 @@ function App() {
       
       const isAdminUser = me.data?.role === 'admin';
       setIsAdmin(isAdminUser); // Actualiza el estado global
+      setIsUserPremium(me.data?.is_premium || false); // Actualiza el estado premium
       // Guardar el nombre del usuario
       if (me.data && me.data.name) {
         setUserName(me.data.name);
@@ -159,6 +169,7 @@ function App() {
       setPortfolio(null);
       setUserName('');
       setIsAdmin(false);
+      setIsUserPremium(false);
       
       console.log('Sesión cerrada: estado local limpiado');
       
@@ -191,6 +202,24 @@ function App() {
     setIsAuthModalOpen(true);
   };
 
+  // Función manejadora para el upgrade exitoso desde PlanPage
+  const handleUpgradeSuccess = async () => {
+    console.log('[handleUpgradeSuccess] Iniciando sincronización después del upgrade...');
+    setIsUserPremium(true);
+    // Esperar a que fetchPortfolio complete para actualizar isUserPremium desde el backend
+    await fetchPortfolio();
+    console.log('[handleUpgradeSuccess] Sincronización completada');
+  };
+
+  // Función manejadora para la cancelación de plan exitosa desde PlanPage
+  const handleCancelSuccess = async () => {
+    console.log('[handleCancelSuccess] Iniciando sincronización después de la cancelación...');
+    setIsUserPremium(false);
+    // Esperar a que fetchPortfolio complete para actualizar isUserPremium desde el backend
+    await fetchPortfolio();
+    console.log('[handleCancelSuccess] Sincronización completada');
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-primary-bg)] font-montserrat text-[var(--color-text-light)]">
       <AnimatedBackground />
@@ -209,7 +238,11 @@ function App() {
         {/* Rutas protegidas que requieren autenticación */}
         <Route
           path="/dashboard/*"
-          element={isAuthenticated ? <Dashboard onLogout={handleLogout} portfolio={portfolio} isAdmin={isAdmin} userName={userName} /> : null}
+          element={isAuthenticated ? <Dashboard onLogout={handleLogout} portfolio={portfolio} isAdmin={isAdmin} userName={userName} isUserPremium={isUserPremium} /> : null}
+        />
+        <Route
+          path="/plan"
+          element={isAuthenticated ? <PlanPage initialIsUserPremium={isUserPremium} onUpgradeSuccess={handleUpgradeSuccess} onCancelSuccess={handleCancelSuccess} /> : null}
         />
         <Route
           path="/risk-profile-form"
@@ -218,6 +251,9 @@ function App() {
         {/* Rutas de administración, solo para admin */}
         <Route path="/admin/*" element={isAuthenticated && isAdmin ? <AdminDashboard onLogout={handleLogout} /> : null} />
         {/* Páginas públicas */}
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
