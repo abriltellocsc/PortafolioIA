@@ -3,35 +3,39 @@ import api from '../services/api';
 
 interface GoogleSignInButtonProps {
   onSuccess?: () => void;
-  variant?: 'header' | 'modal';
   action?: 'signin' | 'signup';
 }
 
 const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ 
   onSuccess, 
-  variant = 'modal', 
   action = 'signin' 
 }) => {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const promptTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Manejar la respuesta de Google credencial
   const handleCredentialResponse = useCallback(async (response: any) => {
+    if (promptTimeoutRef.current) {
+      clearTimeout(promptTimeoutRef.current);
+      promptTimeoutRef.current = null;
+    }
+
     const id_token = response?.credential;
     if (!id_token) {
-      console.error('[GoogleSignInButton] No credential en respuesta de Google');
+      console.error('[GoogleSignInButton] No credential received');
+      setIsLoading(false);
       return;
     }
+    
     setIsLoading(true);
+    
     try {
-      console.log('[GoogleSignInButton] Enviando id_token a backend...');
       const resp = await api.post('/auth/google/verify', { id_token });
-      console.log('[GoogleSignInButton] Respuesta:', resp.data);
-      
       const token = resp.data?.access_token;
+      
       if (!token) {
-        console.error('[GoogleSignInButton] Sin access_token:', resp.data);
-        alert('Error: No se recibió token');
+        alert('Error: No token received');
+        setIsLoading(false);
         return;
       }
       
@@ -41,38 +45,31 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         const decoded = JSON.parse(atob(token.split('.')[1]));
         if (decoded?.user_id) {
           localStorage.setItem('user_id', decoded.user_id);
-          console.log('[GoogleSignInButton] User guardado:', decoded.user_id);
         }
       } catch (e) {
-        console.warn('[GoogleSignInButton] No se pudo decodificar:', e);
+        console.warn('Could not decode token:', e);
       }
       
       if (onSuccess) {
-        console.log('[GoogleSignInButton] Callback ejecutado');
         onSuccess();
       } else {
-        console.log('[GoogleSignInButton] Redirigiendo a home');
         setTimeout(() => window.location.href = '/', 200);
       }
     } catch (err: any) {
-      console.error('[GoogleSignInButton] Error:', err.response?.data || err.message);
       alert('Error: ' + (err.response?.data?.detail || err.message));
     } finally {
       setIsLoading(false);
     }
   }, [onSuccess]);
 
-  // Inicializar Google
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    console.log('[GoogleSignInButton] Inicializando con Client ID:', !!clientId);
     
     if (!clientId) {
-      console.error('[GoogleSignInButton] VITE_GOOGLE_CLIENT_ID no está configurado');
+      console.error('VITE_GOOGLE_CLIENT_ID not configured');
       return;
     }
 
-    // Cargar script si no está cargado
     if (!window.google) {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
@@ -81,17 +78,11 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       script.defer = true;
       
       script.onload = () => {
-        console.log('[GoogleSignInButton] Script de Google cargado');
         initGoogleAuth();
-      };
-      
-      script.onerror = () => {
-        console.error('[GoogleSignInButton] Error cargando script');
       };
       
       document.body.appendChild(script);
     } else {
-      console.log('[GoogleSignInButton] Script ya estaba cargado');
       initGoogleAuth();
     }
 
@@ -99,35 +90,56 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       setTimeout(() => {
         try {
           if (!window.google?.accounts?.id) {
-            console.error('[GoogleSignInButton] Google.accounts.id no disponible');
             return;
           }
           
           window.google.accounts.id.initialize({
             client_id: clientId,
             callback: handleCredentialResponse,
-            use_fedcm_for_prompt: false,
+            use_fedcm_for_prompt: true,
+            auto_select: false,
+            itp_support: true,
           });
-          
-          console.log('[GoogleSignInButton] Google inicializado');
-          
-          // Renderizar botón si hay contenedor
-          // Don't render the native Google button - we'll use custom button
         } catch (err) {
-          console.error('[GoogleSignInButton] Error inicializando:', err);
+          console.error('Error initializing Google:', err);
         }
       }, 100);
     }
+
+    return () => {
+      if (promptTimeoutRef.current) {
+        clearTimeout(promptTimeoutRef.current);
+      }
+    };
   }, [handleCredentialResponse]);
 
-  const handleClick = async () => {
+  const handleClick = () => {
+    if (promptTimeoutRef.current) {
+      clearTimeout(promptTimeoutRef.current);
+    }
+    
     setIsLoading(true);
+    
     try {
       window.google?.accounts?.id?.prompt?.((notification: any) => {
-        console.log('[GoogleSignInButton] Prompt resultado:', notification);
+        if (notification.isDismissedMoment?.()) {
+          setIsLoading(false);
+          if (promptTimeoutRef.current) {
+            clearTimeout(promptTimeoutRef.current);
+          }
+        }
       });
+      
+      promptTimeoutRef.current = setTimeout(() => {
+        setIsLoading(false);
+      }, 5000);
+      
     } catch (err) {
-      console.error('[GoogleSignInButton] Error mostrando prompt:', err);
+      console.error('Error showing prompt:', err);
+      setIsLoading(false);
+      if (promptTimeoutRef.current) {
+        clearTimeout(promptTimeoutRef.current);
+      }
     }
   };
 
@@ -148,7 +160,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         {isLoading ? 'Verificando...' : (action === 'signup' ? 'Registrarse con Google' : 'Iniciar sesión con Google')}
       </span>
     </button>
-  );;
+  );
 };
 
 export default GoogleSignInButton;

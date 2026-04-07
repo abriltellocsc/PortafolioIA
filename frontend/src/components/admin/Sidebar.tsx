@@ -8,7 +8,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, activeSection, onSectionCha
   return (
     <aside className="w-72 bg-[var(--color-card-bg)] border-r border-[var(--color-secondary-bg)] min-h-screen flex flex-col justify-between shadow-lg text-[var(--color-text-light)]">
       <div>
-        <div className="p-6 text-2xl font-bold text-[var(--color-accent-teal)]">PortafolioAI Admin</div>
+        <div className="p-6 text-2xl font-bold text-[var(--color-accent-teal)]">PortafolioIA Admin</div>
         <nav className="mt-8">
           <ul className="space-y-2">
             <li>

@@ -33,7 +33,7 @@ const Home: React.FC<HomeProps> = ({ onOpenAuthModalLogin, onOpenAuthModalRegist
     <div className="flex flex-col min-h-screen bg-[var(--color-primary-bg)]">
       {/* Header */}
       <header className="bg-white shadow-sm p-4 flex justify-between items-center border-b border-gray-200">
-        <div className="text-2xl font-bold text-blue-900">PortafolioAI</div>
+        <div className="text-2xl font-bold text-blue-900">PortafolioIA</div>
         <nav className="flex gap-3 items-center">
           <button
             onClick={onOpenAuthModalLogin}

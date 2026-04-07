@@ -5,7 +5,7 @@ const Footer: React.FC = () => {
     <footer className="bg-white text-gray-700 p-8 mt-auto border-t border-gray-200">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h3 className="text-lg font-bold mb-4 text-blue-900">PortafolioAI</h3>
+          <h3 className="text-lg font-bold mb-4 text-blue-900">PortafolioIA</h3>
           <p className="text-gray-600 text-sm">
             Plataforma profesional de gestión de portafolios de inversión.
           </p>
@@ -21,14 +21,14 @@ const Footer: React.FC = () => {
         <div>
           <h3 className="text-lg font-bold mb-4 text-blue-900">Contacto</h3>
           <div className="flex space-x-4 text-sm">
-            <a href="#" className="text-gray-600 hover:text-blue-900 transition duration-300">LinkedIn</a>
-            <a href="#" className="text-gray-600 hover:text-blue-900 transition duration-300">Twitter</a>
-            <a href="#" className="text-gray-600 hover:text-blue-900 transition duration-300">Email</a>
+            <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-900 transition duration-300">LinkedIn</a>
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-900 transition duration-300">X</a>
+            <a href="mailto:piladoblea29@gmail.com" className="text-gray-600 hover:text-blue-900 transition duration-300">Email</a>
           </div>
         </div>
       </div>
       <div className="text-center text-gray-500 mt-8 pt-8 border-t border-gray-200 text-xs">
-        &copy; {new Date().getFullYear()} PortafolioAI. Todos los derechos reservados.
+        &copy; {new Date().getFullYear()} PortafolioIA. Todos los derechos reservados.
         <p className="text-xs mt-2">Aviso: Este sitio es solo para fines educativos y no constituye asesoramiento financiero.</p>
       </div>
     </footer>

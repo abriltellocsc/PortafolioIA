@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 
@@ -11,9 +11,20 @@ const COLORS = ['#003366', '#0056b3', '#0077cc', '#0099ff', '#1e88e5', '#1565c0'
 
 interface DashboardOverviewProps {
   portfolio: any;
+  isUserPremium?: boolean;
 }
 
-const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio }) => {
+const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUserPremium }) => {
+  const navigate = useNavigate();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const handleViewStrategy = () => {
+    if (!isUserPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    navigate('/dashboard/recommendations');
+  };
   // Si no hay portafolio, muestra mensaje
   if (!portfolio) {
     return (
@@ -32,6 +43,11 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio }) => {
   // Extraer métricas y activos del portafolio real
   const metrics = portfolio.metrics ?? { expected_return: 0, risk: 0 };
   const assets = portfolio.assets ?? [];
+  
+  // Debug logging
+  console.log('[DashboardOverview] Portfolio recibido:', portfolio);
+  console.log('[DashboardOverview] Métricas extraídas:', metrics);
+  console.log('[DashboardOverview] metrics.risk =', metrics.risk, '| expected_return =', metrics.expected_return);
   // Selección de activos principales para Overview (top 3 por porcentaje)
   const mainAssets = [...assets]
     .sort((a, b) => (b.allocation_pct ?? 0) - (a.allocation_pct ?? 0))
@@ -44,13 +60,28 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-2 sm:px-4 md:px-8 animate-fade-in">
       <div className="max-w-6xl mx-auto">
+        {/* Alert de Premium si no es premium */}
+        {!isUserPremium && (
+          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-blue-900">Acceso Limitado</h3>
+              <p className="text-sm text-blue-700">Mejora a Premium para acceso ilimitado a todas las funciones</p>
+            </div>
+            <Link to="/plan">
+              <button className="ml-4 px-4 py-2 bg-blue-900 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors whitespace-nowrap">
+                Ver Planes
+              </button>
+            </Link>
+          </div>
+        )}
+
         <div className="mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 text-blue-900">Tu Portafolio Actual</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 text-gray-900">Tu Portafolio Actual</h1>
           <p className="text-gray-600 text-base sm:text-lg">Basado en tu perfil de riesgo, estos son los activos recomendados para tu inversión</p>
           <div className="mt-4 flex flex-col sm:flex-row items-start gap-3">
             <Link to="/risk-profile-form">
-              <button className="flex items-center gap-2 text-blue-900 font-semibold px-4 py-2 rounded-lg border border-blue-900 bg-white hover:bg-blue-50 transition-colors duration-200 shadow-sm">
-                ↻ Actualizar mi portafolio
+              <button className="flex items-center gap-2 text-gray-900 font-semibold px-4 py-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors duration-200 shadow-sm">
+                Actualizar Portafolio
               </button>
             </Link>
           </div>
@@ -60,23 +91,20 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio }) => {
           {/* Métricas Clave */}
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                📈 Retorno Esperado Anual
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Retorno Esperado Anual</h3>
               <p className="text-4xl sm:text-5xl font-bold text-blue-900">{(metrics.expected_return * 100).toFixed(2)}%</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                🛡️ Nivel de Riesgo
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Nivel de Riesgo</h3>
               <p className="text-4xl sm:text-5xl font-bold text-orange-600">{(metrics.risk * 100).toFixed(2)}%</p>
             </div>
             <div className="mt-6">
-              <Link to="/dashboard/recommendations">
-                <button className="w-full bg-blue-900 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-800 transition duration-300 shadow-md">
-                  Ver Estrategia Completa
-                </button>
-              </Link>
+              <button
+                onClick={handleViewStrategy}
+                className="w-full bg-blue-900 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-800 transition duration-300 shadow-md"
+              >
+                Ver Estrategia Completa
+              </button>
             </div>
           </div>
 
@@ -128,6 +156,39 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio }) => {
           </div>
         </div>
       </div>
+
+      {/* Premium Modal */}
+      {showPremiumModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 rounded-lg" 
+          onClick={() => setShowPremiumModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg p-8 max-w-sm shadow-xl" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">Función Premium</h3>
+            <p className="text-gray-600 text-sm mb-6 text-center">Recomendaciones solo está disponible con plan Premium. Mejora tu plan para acceder.</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowPremiumModal(false)} 
+                className="flex-1 px-4 py-2 rounded border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  navigate('/plan');
+                  setShowPremiumModal(false);
+                }} 
+                className="flex-1 px-4 py-2 rounded bg-blue-900 text-white hover:bg-blue-800 transition"
+              >
+                Ver Planes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

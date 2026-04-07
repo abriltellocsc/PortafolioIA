@@ -1,5 +1,6 @@
 // Componente de autenticación simple
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser } from '../services/api';
 import { FaUser, FaEnvelope, FaLock, FaTimes } from 'react-icons/fa';
 import GoogleSignInButton from './GoogleSignInButton';
@@ -12,6 +13,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, initialMode = 'login' }) => {
+  const navigate = useNavigate();
   const [isRegister, setIsRegister] = useState(initialMode === 'register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -102,6 +104,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, 
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError('Contraseña incorrecta');
+      } else if (err.response?.status === 403) {
+        setError(err.response?.data?.detail || 'Email no verificado. Revisa tu correo (incluyendo spam)');
       } else {
         setError(err.response?.data?.detail || 'Ocurrió un error');
       }
@@ -209,46 +213,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, 
                 <button
                   type="button"
                   className="text-xs text-blue-900 hover:text-blue-600 font-medium underline"
-                  onClick={() => setShowForgot(true)}
+                  onClick={() => {
+                    onClose();
+                    navigate('/forgot-password');
+                  }}
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
             )}
 
-            {/* Modal de recuperación de contraseña */}
-            {showForgot && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-                <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg border border-gray-200 relative">
-                  <button
-                    className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl"
-                    onClick={() => { setShowForgot(false); setForgotEmail(''); setForgotSent(false); setForgotError(null); }}
-                    aria-label="Cerrar"
-                  >
-                    <FaTimes />
-                  </button>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">Recuperar Contraseña</h3>
-                  <form onSubmit={handleForgotSubmit} className="space-y-4">
-                    <input
-                      type="email"
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-900 placeholder-gray-500"
-                      placeholder="Correo electrónico"
-                      value={forgotEmail}
-                      onChange={e => setForgotEmail(e.target.value)}
-                      required
-                    />
-                    {forgotError && <p className="text-red-600 text-xs text-center">{forgotError}</p>}
-                    <button
-                      type="submit"
-                      className="w-full bg-blue-900 text-white font-medium py-2 rounded-lg hover:bg-blue-800 transition duration-200"
-                    >
-                      Enviar Instrucciones
-                    </button>
-                    {forgotSent && <p className="text-green-700 text-xs text-center mt-2 bg-green-50 p-2 rounded">Si el correo existe, recibirás instrucciones para recuperar tu contraseña.</p>}
-                  </form>
-                </div>
-              </div>
-            )}
+            {/* Modal de recuperación de contraseña - REMOVIDO, ahora usa página dedicada */}
           </div>
 
           {error && <p className="text-red-600 text-xs text-center bg-red-50 border border-red-200 rounded-lg py-2">{error}</p>}
@@ -274,7 +249,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, 
 
         {/* Botón de inicio con Google */}
         <div className="mt-4">
-            <GoogleSignInButton variant="modal" action={isRegister ? 'signup' : 'signin'} onSuccess={() => onLoginSuccess('login')} />
+            <GoogleSignInButton action={isRegister ? 'signup' : 'signin'} onSuccess={() => onLoginSuccess('login')} />
         </div>
 
         {/* Alternar login/registro */}

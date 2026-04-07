@@ -31,3 +31,6 @@ class User(Base):
     # Campos para sistema de pagos
     is_premium = Column(Boolean, default=False)
     subscription_id = Column(String, nullable=True)
+    
+    # Contador de llamadas a IA (para limitar uso en plan gratuito)
+    contador_ia = Column(Integer, default=0)

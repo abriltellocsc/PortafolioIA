@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.routes import auth, portfolio, profile, stocks
+from app.routes import auth, portfolio, profile, stocks, usuarios
 from app.routes import admin_users, admin_portfolios, admin_support
 from app.database import Base, engine  # Importar para referencias
 
@@ -26,6 +26,7 @@ app.add_middleware(
 
 # Inclusión de rutas
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticación"])
+app.include_router(usuarios.router, prefix="/api/usuarios", tags=["Usuarios - Freemium"])
 app.include_router(profile.router, prefix="/api", tags=["Perfil de Riesgo"])
 app.include_router(portfolio.router, prefix="/api", tags=["Portafolio"])
 app.include_router(stocks.router, prefix="/api", tags=["Datos de Acciones"])
