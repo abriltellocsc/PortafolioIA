@@ -1,8 +1,13 @@
-import yfinance as yf
 from typing import List, Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
+
+try:
+    import yfinance as yf
+except Exception as e:
+    yf = None
+    logger.warning(f"[yahoo_finance_service] yfinance no disponible: {e}")
 
 class YahooFinanceService:
     """Servicio para obtener datos de Yahoo Finance"""
@@ -20,6 +25,19 @@ class YahooFinanceService:
         """
         results = []
         
+        if yf is None:
+            logger.error("yfinance no está disponible para obtener datos de acciones.")
+            return [{
+                "ticker": ticker,
+                "name": ticker,
+                "current_price": 0,
+                "previous_close": 0,
+                "price_change": 0,
+                "price_change_percent": 0,
+                "currency": "USD",
+                "error": "yfinance no disponible"
+            } for ticker in tickers]
+
         for ticker in tickers:
             try:
                 # Obtener información de la acción
@@ -106,6 +124,9 @@ class YahooFinanceService:
         Returns:
             Diccionario con datos históricos
         """
+        if yf is None:
+            return {"error": "yfinance no disponible"}
+
         try:
             stock = yf.Ticker(ticker)
             history = stock.history(period=period)

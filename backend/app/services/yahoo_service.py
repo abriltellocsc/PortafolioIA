@@ -1,6 +1,11 @@
-import yfinance as yf
 from typing import List, Dict, Any
 from fastapi import HTTPException
+
+try:
+    import yfinance as yf
+except Exception as e:
+    yf = None
+    print(f"[yahoo_service] yfinance no disponible: {e}")
 
 class YahooFinanceService:
     """Servicio para obtener datos de Yahoo Finance"""
@@ -17,6 +22,18 @@ class YahooFinanceService:
             Lista de diccionarios con información de cada acción
         """
         results = []
+
+        if yf is None:
+            return [{
+                "ticker": ticker,
+                "name": ticker,
+                "current_price": 0,
+                "previous_close": 0,
+                "price_change": 0,
+                "price_change_percent": 0,
+                "currency": "USD",
+                "error": "yfinance no disponible"
+            } for ticker in tickers]
         
         for ticker in tickers:
             try:
@@ -92,6 +109,9 @@ class YahooFinanceService:
         Returns:
             Diccionario con datos históricos
         """
+        if yf is None:
+            raise HTTPException(status_code=503, detail="yfinance no disponible")
+
         try:
             stock = yf.Ticker(ticker)
             history = stock.history(period=period)

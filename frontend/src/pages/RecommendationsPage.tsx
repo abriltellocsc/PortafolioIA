@@ -1,12 +1,16 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Label } from 'recharts';
 
 
 
 const COLORS = ['#003366', '#0056b3', '#0077cc', '#0099ff', '#1e88e5', '#1565c0', '#1976d2', '#1e8449', '#2e7d32', '#388e3c'];
 
+// Función personalizada para renderizar labels del gráfico con texto blanco
+const renderLabel = (entry: any) => {
+  return `${entry.name}: ${entry.value.toFixed(2)}%`;
+};
 
 interface RecommendationsPageProps {
   portfolio: any;
@@ -158,6 +162,25 @@ const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) 
                       cx="50%"
                       cy="50%"
                       labelLine={false}
+                      label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                        return (
+                          <text 
+                            x={x} 
+                            y={y} 
+                            fill="white" 
+                            textAnchor={x > cx ? 'start' : 'end'} 
+                            dominantBaseline="central"
+                            fontSize="12"
+                            fontWeight="bold"
+                          >
+                            {name}: {typeof value === 'number' ? value.toFixed(2) : value}%
+                          </text>
+                        );
+                      }}
                       outerRadius={140}
                       fill="#8884d8"
                       dataKey="value"
@@ -168,16 +191,20 @@ const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) 
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #dbeafe',
+                        backgroundColor: '#1e40af',
+                        border: '2px solid #ffffff',
                         borderRadius: '8px',
-                        color: '#0f172a'
+                        color: '#ffffff',
+                        fontWeight: 'bold',
+                        padding: '8px 12px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.2)'
                       }}
                       formatter={(value) => {
                         const v = Array.isArray(value) ? value[0] : value;
                         const num = typeof v === 'number' ? v : parseFloat(v);
                         return isNaN(num) ? String(v) : num.toFixed(2) + '%';
                       }}
+                      labelStyle={{ color: '#ffffff', fontWeight: 'bold' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>

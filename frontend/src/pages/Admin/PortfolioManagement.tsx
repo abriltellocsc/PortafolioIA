@@ -39,8 +39,15 @@ const PortfolioManagement = () => {
       await adminDeletePortfolio(portfolioId);
       setSuccessMsg("Portafolio eliminado correctamente.");
       fetchPortfolios();
-    } catch {
-      setError("Error al eliminar portafolio");
+    } catch (err: any) {
+      console.error("Error detallado al eliminar:", {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status,
+        headers: err?.response?.headers,
+        config: err?.config
+      });
+      setError(err?.response?.data?.detail || err?.message || "Error al eliminar portafolio");
     } finally {
       setDeletingId(null);
     }
@@ -54,8 +61,15 @@ const PortfolioManagement = () => {
       await adminRegeneratePortfolio(userId);
       setSuccessMsg("Portafolio regenerado correctamente.");
       fetchPortfolios();
-    } catch {
-      setError("Error al regenerar portafolio");
+    } catch (err: any) {
+      console.error("Error detallado al regenerar:", {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status,
+        headers: err?.response?.headers,
+        config: err?.config
+      });
+      setError(err?.response?.data?.detail || err?.message || "Error al regenerar portafolio");
     } finally {
       setRegeneratingId(null);
     }
@@ -138,15 +152,15 @@ const PortfolioManagement = () => {
                     else if (riskValue === "medio") riskText = "medio";
                     else if (riskValue === "alto") riskText = "alto";
                     return (
-                      <tr key={p._id || idx} className="border-b border-[var(--color-secondary-bg)] hover:bg-gray-800 transition-all">
+                      <tr key={p.id || idx} className="border-b border-[var(--color-secondary-bg)] transition-all">
                         <td className="py-4 px-6 text-center align-middle">{p.user_id}</td>
                         <td className="py-4 px-6 text-center align-middle">{p.user_email || '-'}</td>
                         <td className="py-4 px-6 text-center align-middle">{riskText || '-'}</td>
                         <td className="py-4 px-6 text-center align-middle">{p.assets ? p.assets.length : 0}</td>
                         <td className="py-4 px-6 text-center align-middle flex gap-2 justify-center">
                           <button className="text-blue-600 hover:underline" onClick={() => setSelectedPortfolio(p)}>Ver</button>
-                          <button className="text-red-600 hover:underline" onClick={() => handleDelete(p._id)} disabled={deletingId === p._id}>
-                            {deletingId === p._id ? "Eliminando..." : "Eliminar"}
+                          <button className="text-red-600 hover:underline" onClick={() => handleDelete(p.id)} disabled={deletingId === p.id}>
+                            {deletingId === p.id ? "Eliminando..." : "Eliminar"}
                           </button>
                           <button className="text-yellow-600 hover:underline" onClick={() => handleRegenerate(p.user_id)} disabled={regeneratingId === p.user_id}>
                             {regeneratingId === p.user_id ? "Regenerando..." : "Regenerar"}

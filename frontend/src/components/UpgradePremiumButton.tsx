@@ -95,7 +95,7 @@ const UpgradePremiumButton: React.FC<UpgradePremiumButtonProps> = ({
         ) : (
           <span className="flex items-center gap-2">
             <span>💎</span>
-            Simular Pago Premium
+            Cambiar a Premium
           </span>
         )}
       </button>

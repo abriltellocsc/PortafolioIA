@@ -8,8 +8,8 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    # Fallback for development (replace with your actual connection string)
-    DATABASE_URL = "postgresql://postgres:Bobyapolo29%40@db.xkzedzyzfnpzlgoqoamy.supabase.co:5432/postgres"
+    # Fallback local para desarrollo en SQLite
+    DATABASE_URL = "sqlite:///portafolioai.db"
 
 engine = create_engine(DATABASE_URL, echo=True)  # echo=True para debugging, quitar en producción
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

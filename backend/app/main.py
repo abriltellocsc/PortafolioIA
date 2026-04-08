@@ -1,9 +1,9 @@
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import auth, portfolio, profile, stocks, usuarios
-from app.routes import admin_users, admin_portfolios, admin_support
+from app.routes import admin_users, admin_portfolios, admin_support, admin_logs
 from app.database import Base, engine  # Importar para referencias
 
 # Las tablas se crean con Alembic, no aquí
@@ -15,13 +15,15 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Configuración de CORS
+# Configuración de CORS - DEBE estar antes de incluir routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, cambiar a la URL del frontend
+    allow_origins=["http://localhost:5173"],  # Frontend URL
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 # Inclusión de rutas
@@ -33,8 +35,8 @@ app.include_router(stocks.router, prefix="/api", tags=["Datos de Acciones"])
 app.include_router(admin_users.router, prefix="/api", tags=["Admin Usuarios"])
 app.include_router(admin_portfolios.router, prefix="/api", tags=["Admin Portafolios"])
 app.include_router(admin_support.router, prefix="/api", tags=["Admin Soporte"])
+app.include_router(admin_logs.router, prefix="/api", tags=["Admin Logs"])
 ## app.include_router(admin_config.router, prefix="/api", tags=["Admin Configuración"])
-## app.include_router(admin_logs.router, prefix="/api", tags=["Admin Logs"])
 
 @app.get("/test", tags=["Test"])
 async def test_endpoint():

@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PremiumAlert from '../components/PremiumAlert';
-import UpgradePremiumButton from '../components/UpgradePremiumButton';
 import CancelPremiumButton from '../components/CancelPremiumButton';
-import PlanStatus from '../components/PlanStatus';
 
 interface PlanPageProps {
   initialIsUserPremium?: boolean;
@@ -14,30 +11,9 @@ interface PlanPageProps {
 const PlanPage: React.FC<PlanPageProps> = ({ initialIsUserPremium = false, onUpgradeSuccess, onCancelSuccess }) => {
   const navigate = useNavigate();
   const [isUserPremium, setIsUserPremium] = useState(initialIsUserPremium);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const handleUpgradeSuccess = async (userData: any) => {
-    console.log('Usuario mejorado a Premium:', userData);
-    
-    setIsUserPremium(true);
-    localStorage.setItem('is_premium', 'true');
-    setRefreshTrigger(prev => prev + 1);
-    
-    // Llamar el callback para actualizar el estado global en App.tsx
-    if (onUpgradeSuccess) {
-      try {
-        // Esperar a que se complete la sincronización en App.tsx
-        await onUpgradeSuccess();
-        console.log('Estado global sincronizado');
-      } catch (err) {
-        console.error('Error sincronizando estado:', err);
-      }
-    }
-    
-    // Redirigir al dashboard después de 1 segundo
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1000);
+  const handleOpenPago = () => {
+    navigate('/pago');
   };
 
   const handleCancelSuccess = async (userData: any) => {
@@ -45,7 +21,6 @@ const PlanPage: React.FC<PlanPageProps> = ({ initialIsUserPremium = false, onUpg
     
     setIsUserPremium(false);
     localStorage.removeItem('is_premium');
-    setRefreshTrigger(prev => prev + 1);
     
     // Llamar el callback para actualizar el estado global en App.tsx
     if (onCancelSuccess) {
@@ -184,10 +159,15 @@ const PlanPage: React.FC<PlanPageProps> = ({ initialIsUserPremium = false, onUpg
                 />
               </div>
             ) : (
-              <UpgradePremiumButton
-                isUserPremium={isUserPremium}
-                onUpgradeSuccess={handleUpgradeSuccess}
-              />
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleOpenPago}
+                  className="w-full px-6 py-3 font-bold rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 hover:shadow-lg transition-all duration-200"
+                >
+                  💎 Cambiar a Premium
+                </button>
+                <p className="text-sm text-gray-500">Serás redirigido a la página de pago para activar Premium.</p>
+              </div>
             )}
           </div>
         </div>

@@ -22,10 +22,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, 
   const [loading, setLoading] = useState<boolean>(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [touched, setTouched] = useState<{ email: boolean; password: boolean; name: boolean }>({ email: false, password: false, name: false });
-  const [showForgot, setShowForgot] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSent, setForgotSent] = useState(false);
-  const [forgotError, setForgotError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,23 +46,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, 
   const validateEmail = (value: string) => /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value);
   const validatePassword = (value: string) => value.length >= 6;
   const validateName = (value: string) => value.length >= 2;
-
-  // Enviar solicitud de recuperación de contraseña
-  const handleForgotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setForgotError(null);
-    setForgotSent(false);
-    if (!validateEmail(forgotEmail)) {
-      setForgotError('Correo electrónico inválido');
-      return;
-    }
-    try {
-      await import('../services/api').then(({ forgotPasswordRequest }) => forgotPasswordRequest(forgotEmail));
-      setForgotSent(true);
-    } catch (err: any) {
-      setForgotError('No se pudo enviar el correo.');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -18,6 +18,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import PlanPage from './pages/PlanPage';
+import Pago from './pages/Pago';
 // Importar componentes de admin
 import AdminDashboard from './pages/Admin/AdminDashboard';
 // Eliminar referencias a LogsAudit y SupportMessages
@@ -64,8 +65,17 @@ function App() {
       // Obtener el user_id y luego el portafolio
       const userId = response.data?._id || response.data?.id || response.data?.user_id;
       if (userId) {
-        const portfolioRes = await fetchUserPortfolio(userId);
-        setPortfolio(portfolioRes.data);
+        try {
+          const portfolioRes = await fetchUserPortfolio(userId);
+          setPortfolio(portfolioRes.data);
+        } catch (portfolioErr: any) {
+          // 404 es normal si el usuario no tiene portafolio
+          if (portfolioErr.response?.status === 404) {
+            setPortfolio(null);
+          } else {
+            throw portfolioErr;
+          }
+        }
       } else {
         setPortfolio(null);
       }
@@ -80,8 +90,8 @@ function App() {
         setIsAdmin(false);
         return;
       }
+      // No cambiar setPortfolio ni setIsAdmin aquí - solo para otros errores no-404
       setPortfolio(null);
-      setIsAdmin(false);
     } finally {
       setIsLoading(false);
     }
@@ -205,9 +215,10 @@ function App() {
   // Función manejadora para el upgrade exitoso desde PlanPage
   const handleUpgradeSuccess = async () => {
     console.log('[handleUpgradeSuccess] Iniciando sincronización después del upgrade...');
-    setIsUserPremium(true);
     // Esperar a que fetchPortfolio complete para actualizar isUserPremium desde el backend
     await fetchPortfolio();
+    // Establecer como premium DESPUÉS de fetchPortfolio para que no sea sobrescrito
+    setIsUserPremium(true);
     console.log('[handleUpgradeSuccess] Sincronización completada');
   };
 
@@ -243,6 +254,10 @@ function App() {
         <Route
           path="/plan"
           element={isAuthenticated ? <PlanPage initialIsUserPremium={isUserPremium} onUpgradeSuccess={handleUpgradeSuccess} onCancelSuccess={handleCancelSuccess} /> : null}
+        />
+        <Route
+          path="/pago"
+          element={isAuthenticated ? <Pago onSubscribeSuccess={handleUpgradeSuccess} /> : null}
         />
         <Route
           path="/risk-profile-form"

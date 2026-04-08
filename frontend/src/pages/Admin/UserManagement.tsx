@@ -66,15 +66,15 @@ const UserManagement = () => {
       // Detectar cambio de estado y usar el endpoint correcto
       if (editForm.status !== editingUser.status) {
         if (editForm.status === "bloqueado") {
-          await adminBlockUser(editingUser._id);
+          await adminBlockUser(editingUser.id);
         } else if (editForm.status === "activo") {
-          await adminUnblockUser(editingUser._id);
+          await adminUnblockUser(editingUser.id);
         }
       }
       // Actualizar otros campos si cambiaron
       const { name, email, role } = editForm;
       if (name !== editingUser.name || email !== editingUser.email || role !== editingUser.role) {
-        await adminUpdateUser(editingUser._id, { name, email, role });
+        await adminUpdateUser(editingUser.id, { name, email, role });
       }
       setSuccessMsg("Usuario actualizado correctamente.");
       setEditingUser(null);
@@ -189,20 +189,20 @@ const UserManagement = () => {
                   <tr><td colSpan={6} className="text-center py-4">No hay usuarios registrados.</td></tr>
                 ) : (
                   filteredUsers.map((user, idx) => (
-                    <tr key={user._id || idx} className="border-b border-[var(--color-secondary-bg)]">
+                    <tr key={user.id || idx} className="border-b border-[var(--color-secondary-bg)]">
                       <td className="py-4 px-6 text-center align-middle">{user.name || user.full_name || user.username || '-'}</td>
                       <td className="py-4 px-6 text-center align-middle">{user.email}</td>
                       <td className="py-4 px-6 text-center align-middle">{user.role}</td>
                       <td className="py-4 px-6 text-center align-middle">{user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
                       <td className="py-4 px-6 text-center align-middle flex gap-2 justify-center">
                         <button className="text-blue-600 hover:underline" onClick={() => handleEdit(user)}>Editar</button>
-                        <button className="text-yellow-600 hover:underline" onClick={() => handleReset(user._id)} disabled={resettingId === user._id}>
-                          {resettingId === user._id ? "Reseteando..." : "Resetear"}
+                        <button className="text-yellow-600 hover:underline" onClick={() => handleReset(user.id)} disabled={resettingId === user.id}>
+                          {resettingId === user.id ? "Reseteando..." : "Resetear"}
                         </button>
-                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(user._id)} disabled={deletingId === user._id}>
-                          {deletingId === user._id ? "Eliminando..." : "Eliminar"}
+                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(user.id)} disabled={deletingId === user.id}>
+                          {deletingId === user.id ? "Eliminando..." : "Eliminar"}
                         </button>
-                        <button className="text-gray-600 hover:underline" onClick={() => handleHistory(user._id)}>Historial</button>
+                        <button className="text-gray-600 hover:underline" onClick={() => handleHistory(user.id)}>Historial</button>
                       </td>
                     </tr>
                   ))

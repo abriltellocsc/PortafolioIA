@@ -61,15 +61,18 @@ class ForgotPasswordRequest(BaseModel):
 # ============================================================================
 
 def get_password_hash(password: str) -> str:
-    truncated_password_bytes = password.encode('utf-8')[:72]
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(truncated_password_bytes, salt)
-    return hashed_password.decode('utf-8')
+    from passlib.hash import pbkdf2_sha256
+    return pbkdf2_sha256.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    truncated_plain_password_bytes = plain_password.encode('utf-8')[:72]
-    return bcrypt.checkpw(truncated_plain_password_bytes, hashed_password.encode('utf-8'))
+    if not hashed_password:
+        return False
+    try:
+        from passlib.hash import pbkdf2_sha256
+        return pbkdf2_sha256.verify(plain_password, hashed_password)
+    except Exception:
+        return False
 
 
 def send_reset_email(to_email: str, token: str):

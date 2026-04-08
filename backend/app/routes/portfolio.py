@@ -8,6 +8,7 @@ from datetime import datetime
 from app.database import get_db
 from app.models.user import User
 from app.models.portfolio import Portfolio, Asset
+from app.models.support_message import SupportMessage
 from app.routes.auth import get_current_user
 from app.services.optimizer_service import generate_portfolio, get_market_data, calculate_metrics, normalize_metrics
 from sqlalchemy.orm import Session
@@ -176,20 +177,62 @@ async def simulate_portfolio(
 
 @router.post("/support/contact", response_description="Submit a contact message")
 async def submit_contact_message(
-    contact_data: Dict[str, Any] = Body(...)
+    contact_data: Dict[str, Any] = Body(...),
+    db: Session = Depends(get_db)
 ):
-    from app.database import db
-    from datetime import datetime
-    # Construir el documento con los campos necesarios
-    message_doc = {
-        "user": contact_data.get("name", ""),
-        "email": contact_data.get("email", ""),
-        "message": contact_data.get("message", ""),
-        "created_at": datetime.utcnow(),
-        "status": "pendiente"
-    }
-    db.contact_messages.insert_one(message_doc)
-    return {"message": "Mensaje de contacto recibido con éxito."}
+    """
+    Recibe un mensaje de contacto del usuario y lo guarda en la base de datos.
+    """
+    try:
+        name = contact_data.get("name", "").strip()
+        email = contact_data.get("email", "").strip()
+        message = contact_data.get("message", "").strip()
+        
+        # Validación básica
+        if not name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nombre requerido"
+            )
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email requerido"
+            )
+        if not message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mensaje requerido"
+            )
+        
+        # Crear mensaje de soporte
+        support_msg = SupportMessage(
+            user_name=name,
+            user_email=email,
+            message=message,
+            status="pendiente"
+        )
+        
+        db.add(support_msg)
+        db.commit()
+        db.refresh(support_msg)
+        
+        print(f"[SUPPORT] Nuevo mensaje guardado - ID: {support_msg.id}, Email: {email}")
+        
+        return {
+            "success": True,
+            "message": "Mensaje de contacto recibido con éxito. Te contactaremos pronto.",
+            "support_message_id": support_msg.id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[SUPPORT] Error al procesar mensaje: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al procesar el mensaje de contacto"
+        )
 
 @router.get("/news", response_description="Get financial news")
 async def get_news():
@@ -236,52 +279,43 @@ async def get_stock_data(
     
     try:
         import yfinance as yf
-        
-        stock_info = []
-        for ticker in tickers:
-            try:
-                stock = yf.Ticker(ticker)
-                info = stock.info
-                
-                # Obtener precio actual
-                current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose', 0)
-                
-                # Obtener cambio del día
-                previous_close = info.get('previousClose', current_price)
-                price_change = current_price - previous_close
-                price_change_percent = (price_change / previous_close * 100) if previous_close else 0
-                
-                stock_info.append({
-                    "ticker": ticker,
-                    "name": info.get('longName') or info.get('shortName') or ticker,
-                    "current_price": round(current_price, 2),
-                    "previous_close": round(previous_close, 2),
-                    "price_change": round(price_change, 2),
-                    "price_change_percent": round(price_change_percent, 2),
-                    "currency": info.get('currency', 'USD'),
-                    "market_cap": info.get('marketCap'),
-                    "volume": info.get('volume'),
-                    "pe_ratio": info.get('trailingPE'),
-                    "dividend_yield": info.get('dividendYield')
-                })
-            except Exception as e:
-                # Si falla un ticker específico, agregar datos de error
-                stock_info.append({
-                    "ticker": ticker,
-                    "name": ticker,
-                    "current_price": 0,
-                    "error": str(e)
-                })
-        
-        return {"stocks": stock_info}
-    
-    except ImportError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="yfinance library is not installed. Please install it with: pip install yfinance"
-        )
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching stock data: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"yfinance no disponible: {e}")
+
+    stock_info = []
+    for ticker in tickers:
+        try:
+            stock = yf.Ticker(ticker)
+            info = stock.info
+            
+            # Obtener precio actual
+            current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose', 0)
+            
+            # Obtener cambio del día
+            previous_close = info.get('previousClose', current_price)
+            price_change = current_price - previous_close
+            price_change_percent = (price_change / previous_close * 100) if previous_close else 0
+            
+            stock_info.append({
+                "ticker": ticker,
+                "name": info.get('longName') or info.get('shortName') or ticker,
+                "current_price": round(current_price, 2),
+                "previous_close": round(previous_close, 2),
+                "price_change": round(price_change, 2),
+                "price_change_percent": round(price_change_percent, 2),
+                "currency": info.get('currency', 'USD'),
+                "market_cap": info.get('marketCap'),
+                "volume": info.get('volume'),
+                "pe_ratio": info.get('trailingPE'),
+                "dividend_yield": info.get('dividendYield')
+            })
+        except Exception as e:
+            # Si falla un ticker específico, agregar datos de error
+            stock_info.append({
+                "ticker": ticker,
+                "name": ticker,
+                "current_price": 0,
+                "error": str(e)
+            })
+    
+    return {"stocks": stock_info}

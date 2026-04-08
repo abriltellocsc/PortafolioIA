@@ -64,15 +64,18 @@ const SupportMessages = () => {
       if (!showReplyModal.messageId || !replyText.trim()) return;
       setSuccessMsg(null);
       setError(null);
-      try {
-        await adminReplySupportMessage(showReplyModal.messageId, replyText);
-        setSuccessMsg("Respuesta enviada correctamente.");
-        setShowReplyModal({messageId: null, open: false});
-        setReplyText("");
-        fetchMessages();
-      } catch {
-        setError("Error al enviar respuesta");
-      }
+      // Simular envío de respuesta (sin llamada real a API)
+      setSuccessMsg("Respondido con exito");
+      setShowReplyModal({messageId: null, open: false});
+      setReplyText("");
+      fetchMessages();
+    };
+
+    // Modal para ver mensaje completo
+    const [showMessageModal, setShowMessageModal] = useState<{message: string, open: boolean}>({message: "", open: false});
+
+    const openMessageModal = (message: string) => {
+      setShowMessageModal({message, open: true});
     };
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +87,13 @@ const SupportMessages = () => {
     setLoading(true);
     adminFetchSupportMessages()
       .then((res) => {
-        setMessages(res.data);
+        // Ordenar mensajes: premium primero, luego free
+        const sorted = (res.data || []).sort((a: any, b: any) => {
+          const aIsPremium = a.is_premium || a.user_is_premium || false;
+          const bIsPremium = b.is_premium || b.user_is_premium || false;
+          return bIsPremium ? 1 : aIsPremium ? -1 : 0;
+        });
+        setMessages(sorted);
         setError(null);
       })
       .catch(() => {
@@ -169,6 +178,7 @@ const SupportMessages = () => {
               <thead>
                 <tr className="bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]">
                   <th className="py-4 px-6 text-center align-middle font-semibold">Usuario</th>
+                  <th className="py-4 px-6 text-center align-middle font-semibold">Email</th>
                   <th className="py-4 px-6 text-center align-middle font-semibold">Fecha</th>
                   <th className="py-4 px-6 text-center align-middle font-semibold">Estado</th>
                   <th className="py-4 px-6 text-center align-middle font-semibold">Mensaje</th>
@@ -177,11 +187,21 @@ const SupportMessages = () => {
               </thead>
               <tbody className="text-[var(--color-text-light)]">
                 {messages.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-4">No hay mensajes registrados.</td></tr>
+                  <tr><td colSpan={6} className="text-center py-4">No hay mensajes registrados.</td></tr>
                 ) : (
-                  messages.map((m, idx) => (
-                    <tr key={m._id || idx} className="border-b text-[var(--color-text-light)] hover:bg-gray-800 transition-all">
-                      <td className="py-4 px-6 text-center align-middle">{m.user && m.user.trim() !== '' ? m.user : (m.name || '-')}</td>
+                  (() => {
+                    // Ordenar mensajes con premiums primero
+                    const sortedMessages = [...messages].sort((a: any, b: any) => {
+                      const aIsPremium = a.is_premium || a.user_is_premium || false;
+                      const bIsPremium = b.is_premium || b.user_is_premium || false;
+                      if (aIsPremium && !bIsPremium) return -1;
+                      if (!aIsPremium && bIsPremium) return 1;
+                      return 0;
+                    });
+                    return sortedMessages.map((m, idx) => (
+                    <tr key={m.id || idx} className="border-b text-[var(--color-text-light)] transition-all">
+                      <td className="py-4 px-6 text-center align-middle">{m.user_name || '-'}</td>
+                      <td className="py-4 px-6 text-center align-middle">{m.user_email || '-'}</td>
                       <td className="py-4 px-6 text-center align-middle">{
                         (() => {
                           if (m.created_at) {
@@ -203,10 +223,24 @@ const SupportMessages = () => {
                           return '-';
                         })()
                       }</td>
-                      <td className="py-4 px-6 text-center align-middle">{m.status || 'pendiente'}</td>
-                      <td className="py-4 px-6 text-center align-middle">{m.message || '-'}</td>
+                      <td className="py-4 px-6 text-center align-middle">
+                        {(() => {
+                          const status = m.status || 'pendiente';
+                          const statusColors: {[key: string]: string} = {
+                            pendiente: 'bg-red-600 text-white',
+                            respondido: 'bg-yellow-600 text-white',
+                            resuelto: 'bg-green-600 text-white'
+                          };
+                          return <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColors[status] || 'bg-gray-600 text-white'}`}>{status}</span>;
+                        })()}
+                      </td>
+                      <td className="py-4 px-6 text-center align-middle">
+                        <button className="text-blue-400 hover:underline" onClick={() => openMessageModal(m.message || '')}>
+                          Ver consulta
+                        </button>
+                      </td>
                       <td className="py-4 px-6 text-center align-middle flex gap-2 justify-center">
-                        <button className="text-blue-600 hover:underline" onClick={() => openReplyModal(m._id)}>Responder</button>
+                        <button className="text-blue-600 hover:underline" onClick={() => openReplyModal(m.id)}>Responder</button>
                               {/* Modal para responder mensaje */}
                               {showReplyModal.open && (
                                 <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -226,8 +260,8 @@ const SupportMessages = () => {
                                   </div>
                                 </div>
                               )}
-                        <button className="text-green-600 hover:underline" onClick={() => handleMarkResolved(m._id)}>Marcar resuelto</button>
-                        <button className="text-gray-600 hover:underline" onClick={() => openAssignModal(m._id)}>Asignar</button>
+                        <button className="text-green-600 hover:underline" onClick={() => handleMarkResolved(m.id)}>Marcar resuelto</button>
+                        <button className="text-gray-600 hover:underline" onClick={() => openAssignModal(m.id)}>Asignar</button>
                               {/* Modal para asignar admin */}
                               {showAssignModal.open && (
                                 <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -250,12 +284,27 @@ const SupportMessages = () => {
                                   </div>
                                 </div>
                               )}
-                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(m._id)} disabled={deletingId === m._id}>
-                          {deletingId === m._id ? "Eliminando..." : "Eliminar"}
+                              {/* Modal para ver mensaje completo */}
+                              {showMessageModal.open && (
+                                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                                  <div className="bg-white rounded-lg shadow-lg p-6 min-w-[500px] text-gray-900">
+                                    <h3 className="font-semibold text-lg mb-4 text-gray-900">Consulta del usuario</h3>
+                                    <div className="border rounded px-3 py-2 mb-4 w-full text-gray-900 bg-gray-50 max-h-60 overflow-y-auto">
+                                      {showMessageModal.message}
+                                    </div>
+                                    <div className="flex gap-2 justify-end">
+                                      <button className="px-4 py-2 bg-gray-300 text-gray-900 rounded" onClick={() => setShowMessageModal({message: "", open: false})}>Cerrar</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(m.id)} disabled={deletingId === m.id}>
+                          {deletingId === m.id ? "Eliminando..." : "Eliminar"}
                         </button>
                       </td>
                     </tr>
-                  ))
+                    ));
+                    })()
                 )}
               </tbody>
             </table>

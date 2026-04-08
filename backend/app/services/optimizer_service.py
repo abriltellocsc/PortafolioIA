@@ -3,10 +3,14 @@ import json
 import random
 from datetime import datetime
 
-import google.genai as genai
+try:
+    import google.genai as genai
+except ModuleNotFoundError:
+    genai = None
+    print('[genai] Paquete google.genai no disponible; se usará el generador local en su lugar.')
+
 import numpy as np
 import pandas as pd
-import yfinance as yf
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import sample_cov
 from pypfopt.efficient_frontier import EfficientFrontier
@@ -16,11 +20,13 @@ from typing import Dict, Any, List
 # Configurar la API Key
 api_key = os.getenv("API_KEY_GEMINI")
 client = None
-if api_key:
+if api_key and genai is not None:
     try:
         client = genai.Client(api_key=api_key)
     except Exception as e:
         print(f"[genai] Error configurando API: {e}")
+elif api_key and genai is None:
+    print('[genai] API_KEY_GEMINI encontrada pero google.genai no está instalado.')
 
 # más símbolos con nombres y sectores para fallback aleatorio
 ASSET_UNIVERSE = [
@@ -48,6 +54,12 @@ def get_market_data(symbols: List[str], period: str = "1y") -> pd.DataFrame:
     """Descarga datos históricos de cierre para los símbolos y devuelve un DataFrame.
     Usa `auto_adjust` para simplificar la estructura de columnas.
     """
+    try:
+        import yfinance as yf
+    except Exception as e:
+        print(f"[market] yfinance no está disponible: {e}")
+        raise RuntimeError("yfinance no está disponible en este entorno") from e
+
     try:
         df = yf.download(symbols, period=period, progress=False, auto_adjust=True)
         # `Close` puede estar en un nivel superior si se descargan múltiples símbolos
