@@ -18,9 +18,9 @@ app = FastAPI(
 # Configuración de CORS - DEBE estar antes de incluir routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend URL
+    allow_origins=["*"] ,  # Permitir peticiones desde cualquier origen para desarrollo
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=600,

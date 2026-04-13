@@ -126,8 +126,9 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
         try {
           const fetchPortfolio = await import('../services/api');
           const userPortfolioResp = await fetchPortfolio.fetchUserPortfolio(userId);
-          if (userPortfolioResp.data) {
-            realPortfolio = userPortfolioResp.data;
+          const apiPortfolio = userPortfolioResp.data?.portfolio ?? userPortfolioResp.data;
+          if (apiPortfolio) {
+            realPortfolio = apiPortfolio;
           }
         } catch (e) {
           // Si falla, usar el portafolio de optimizePortfolio

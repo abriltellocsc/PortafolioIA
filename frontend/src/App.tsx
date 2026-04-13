@@ -67,9 +67,9 @@ function App() {
       if (userId) {
         try {
           const portfolioRes = await fetchUserPortfolio(userId);
-          setPortfolio(portfolioRes.data);
+          const portfolioData = portfolioRes.data?.portfolio ?? portfolioRes.data;
+          setPortfolio(portfolioData || null);
         } catch (portfolioErr: any) {
-          // 404 es normal si el usuario no tiene portafolio
           if (portfolioErr.response?.status === 404) {
             setPortfolio(null);
           } else {

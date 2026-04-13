@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../../components/admin/Sidebar';
 import UserManagement from './UserManagement';
-import PortfolioManagement from './PortfolioManagement';
 import SupportMessages from './SupportMessages';
-import AdminLogs from './AdminLogs';
 import AdminUserLogs from './AdminUserLogs';
 
 interface AdminDashboardProps {
@@ -17,12 +15,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     switch (activeSection) {
       case 'users':
         return <UserManagement />;
-      case 'portfolios':
-        return <PortfolioManagement />;
       case 'support':
         return <SupportMessages />;
-      case 'logs':
-        return <AdminLogs />;
       case 'user-logs':
         return <AdminUserLogs />;
       default:

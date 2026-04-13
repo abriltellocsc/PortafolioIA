@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from typing import List, Optional
+from datetime import datetime, timedelta
 from app.database import get_db
 from app.models.user import User
 from app.models.audit_log import AuditLog
 from app.routes.auth import get_current_user, require_admin
 from app.services.audit_service import grabar_auditoria
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from math import ceil
 
 router = APIRouter()
 
@@ -20,17 +23,68 @@ def serialize_user(user: User):
         "experience_level": user.experience_level,
         "investment_goal": user.investment_goal,
         "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
         "email_verified": user.email_verified,
         "is_premium": user.is_premium,
         "subscription_id": user.subscription_id,
+        "is_active": user.is_active,
         "contador_ia": user.contador_ia,
     }
 
 
 @router.get("/admin/users")
-async def list_users(current_user: User = Depends(require_admin), db: Session = Depends(get_db)):
-    users = db.query(User).all()
-    return [serialize_user(user) for user in users]
+async def list_users(
+    page: int = 1,
+    page_size: int = 10,
+    status: str = "active",
+    role: Optional[str] = None,
+    search: Optional[str] = None,
+    desde: Optional[str] = None,
+    hasta: Optional[str] = None,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    query = db.query(User)
+    now = datetime.utcnow()
+
+    cutoff = now - timedelta(days=30)
+    if status == "active":
+        query = query.filter(User.is_active == True, User.updated_at != None, User.updated_at >= cutoff)
+    elif status == "inactive":
+        query = query.filter(or_(User.is_active == False, User.updated_at == None, User.updated_at < cutoff))
+
+    if role:
+        query = query.filter(User.role == role)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(or_(User.name.ilike(search_term), User.email.ilike(search_term)))
+
+    if desde:
+        try:
+            desde_dt = datetime.fromisoformat(desde)
+            query = query.filter(User.updated_at != None, User.updated_at >= desde_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Fecha desde inválida")
+
+    if hasta:
+        try:
+            hasta_dt = datetime.fromisoformat(hasta)
+            query = query.filter(User.updated_at != None, User.updated_at <= hasta_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Fecha hasta inválida")
+
+    total = query.count()
+    total_pages = ceil(total / page_size) if page_size > 0 else 1
+    users = query.order_by(User.updated_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    return {
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "total_pages": total_pages,
+        "users": [serialize_user(user) for user in users],
+    }
 
 
 @router.get("/admin/users/{user_id}")
@@ -67,11 +121,17 @@ async def update_user(user_id: int, data: dict = Body(...), current_user: User =
     updated_fields = []
     for key, value in data.items():
         if hasattr(user, key):
+            if key == "is_active":
+                value = bool(value)
             setattr(user, key, value)
             updated_fields.append(key)
     db.commit()
     detalle = f"Updated user {user_id}. Campos: {', '.join(updated_fields)}" if updated_fields else f"Updated user {user_id}."
-    grabar_auditoria(db, current_user.id, "ADMIN_UPDATE_USER", detalle)
+    if "is_active" in updated_fields:
+        status_label = "activo" if user.is_active else "inactivo"
+        grabar_auditoria(db, current_user.id, "ADMIN_UPDATE_USER_STATUS", f"Changed status of user {user.email} (id={user_id}) to {status_label}")
+    else:
+        grabar_auditoria(db, current_user.id, "ADMIN_UPDATE_USER", detalle)
     return {"message": "User updated"}
 
 

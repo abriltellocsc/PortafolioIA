@@ -1,12 +1,17 @@
 
 import React, { useEffect, useState } from "react";
-import { adminFetchUsers, adminDeleteUser, adminUpdateUser, adminResetPassword, adminUserActivity, adminBlockUser, adminUnblockUser } from "../../services/api";
+import { adminFetchUsers, adminUpdateUser, adminResetPassword, adminUserActivity } from "../../services/api";
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [filterStatus, _setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState("active");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [showHistory, setShowHistory] = useState<string | null>(null);
@@ -14,14 +19,23 @@ const UserManagement = () => {
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fetchUsers = () => {
     setLoading(true);
-    adminFetchUsers()
+    adminFetchUsers({
+      page: currentPage,
+      page_size: 10,
+      status: filterStatus,
+      role: filterRole || undefined,
+      search: search || undefined,
+      desde: fromDate || undefined,
+      hasta: toDate || undefined,
+    })
       .then((res) => {
-        setUsers(res.data);
+        setUsers(res.data.users || []);
+        setTotalUsers(res.data.total || 0);
+        setTotalPages(res.data.total_pages || 1);
         setError(null);
       })
       .catch(() => {
@@ -32,21 +46,17 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [currentPage, filterStatus, filterRole, fromDate, toDate, search]);
 
-  const handleDelete = async (userId: string) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
-    setDeletingId(userId);
+  const handleStatusChange = async (userId: string, isActive: boolean) => {
     setSuccessMsg(null);
     setError(null);
     try {
-      await adminDeleteUser(userId);
-      setSuccessMsg("Usuario eliminado correctamente.");
+      await adminUpdateUser(userId, { is_active: isActive });
+      setSuccessMsg("Estado de usuario actualizado correctamente.");
       fetchUsers();
     } catch {
-      setError("Error al eliminar usuario");
-    } finally {
-      setDeletingId(null);
+      setError("Error al actualizar el estado del usuario");
     }
   };
 
@@ -63,15 +73,7 @@ const UserManagement = () => {
   const handleEditSave = async () => {
     if (!editingUser) return;
     try {
-      // Detectar cambio de estado y usar el endpoint correcto
-      if (editForm.status !== editingUser.status) {
-        if (editForm.status === "bloqueado") {
-          await adminBlockUser(editingUser.id);
-        } else if (editForm.status === "activo") {
-          await adminUnblockUser(editingUser.id);
-        }
-      }
-      // Actualizar otros campos si cambiaron
+      // Actualizar datos básicos del usuario si se modificaron
       const { name, email, role } = editForm;
       if (name !== editingUser.name || email !== editingUser.email || role !== editingUser.role) {
         await adminUpdateUser(editingUser.id, { name, email, role });
@@ -116,38 +118,55 @@ const UserManagement = () => {
     setUserHistory([]);
   };
 
-  // Filtrar usuarios según los filtros
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      search === "" ||
-      (user.name && user.name.toLowerCase().includes(search.toLowerCase())) ||
-      (user.email && user.email.toLowerCase().includes(search.toLowerCase()));
-    const matchesRole = filterRole === "" || user.role === filterRole;
-    const status = user.status || (user.is_blocked ? "bloqueado" : "activo");
-    const matchesStatus = filterStatus === "" || status === filterStatus;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
   return (
     <div className="p-8">
-      <h2 className="text-xl font-bold mb-4">Gestión de Usuarios</h2>
+      <h2 className="text-xl font-bold mb-6">Gestión de Usuarios</h2>
       <div className="mb-4 flex flex-wrap gap-4 items-end">
         <input
           className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]"
           placeholder="Buscar usuario..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+        />
+        <select
+          className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]"
+          value={filterStatus}
+          onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+        >
+          <option value="active">Activos</option>
+          <option value="inactive">Inactivos</option>
+          <option value="all">Todos</option>
+        </select>
+        <input
+          type="date"
+          className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]"
+          value={fromDate}
+          onChange={e => { setFromDate(e.target.value); setCurrentPage(1); }}
+        />
+        <input
+          type="date"
+          className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]"
+          value={toDate}
+          onChange={e => { setToDate(e.target.value); setCurrentPage(1); }}
         />
         <select
           className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]"
           value={filterRole}
-          onChange={e => setFilterRole(e.target.value)}
+          onChange={e => { setFilterRole(e.target.value); setCurrentPage(1); }}
         >
           <option value="">Todos los roles</option>
           <option value="user">Usuario</option>
           <option value="admin">Admin</option>
         </select>
-       
+        <button
+          className="bg-teal-600 text-white px-4 py-2 rounded"
+          onClick={() => {
+            setCurrentPage(1);
+            fetchUsers();
+          }}
+        >
+          Aplicar filtros
+        </button>
         <button className="ml-auto bg-teal-600 text-white px-4 py-2 rounded" onClick={() => {
           const headers = ["Nombre", "Email", "Rol", "Registro"];
           const rows = users.map(u => [
@@ -180,27 +199,38 @@ const UserManagement = () => {
                   <th className="py-4 px-6 text-center align-middle font-semibold">Nombre</th>
                   <th className="py-4 px-6 text-center align-middle font-semibold">Email</th>
                   <th className="py-4 px-6 text-center align-middle font-semibold">Rol</th>
-                  <th className="py-4 px-6 text-center align-middle font-semibold">Registro</th>
+                  <th className="py-4 px-6 text-center align-middle font-semibold">Última conexión</th>
+                  <th className="py-4 px-6 text-center align-middle font-semibold">Estado</th>
                   <th className="py-4 px-6 text-center align-middle font-semibold">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.length === 0 ? (
+                {users.length === 0 ? (
                   <tr><td colSpan={6} className="text-center py-4">No hay usuarios registrados.</td></tr>
                 ) : (
-                  filteredUsers.map((user, idx) => (
+                  users.map((user, idx) => (
                     <tr key={user.id || idx} className="border-b border-[var(--color-secondary-bg)]">
                       <td className="py-4 px-6 text-center align-middle">{user.name || user.full_name || user.username || '-'}</td>
                       <td className="py-4 px-6 text-center align-middle">{user.email}</td>
                       <td className="py-4 px-6 text-center align-middle">{user.role}</td>
-                      <td className="py-4 px-6 text-center align-middle">{user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
+                      <td className="py-4 px-6 text-center align-middle">{user.updated_at ? new Date(user.updated_at).toLocaleDateString() : '-'}</td>
+                      <td className="py-4 px-6 text-center align-middle">
+                        <div className="flex flex-col items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-sm ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {user.is_active ? 'Activo' : 'Inactivo'}
+                          </span>
+                          <button
+                            onClick={() => handleStatusChange(user.id, !user.is_active)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            {user.is_active ? 'Desactivar' : 'Activar'}
+                          </button>
+                        </div>
+                      </td>
                       <td className="py-4 px-6 text-center align-middle flex gap-2 justify-center">
                         <button className="text-blue-600 hover:underline" onClick={() => handleEdit(user)}>Editar</button>
                         <button className="text-yellow-600 hover:underline" onClick={() => handleReset(user.id)} disabled={resettingId === user.id}>
                           {resettingId === user.id ? "Reseteando..." : "Resetear"}
-                        </button>
-                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(user.id)} disabled={deletingId === user.id}>
-                          {deletingId === user.id ? "Eliminando..." : "Eliminar"}
                         </button>
                         <button className="text-gray-600 hover:underline" onClick={() => handleHistory(user.id)}>Historial</button>
                       </td>
@@ -209,6 +239,36 @@ const UserManagement = () => {
                 )}
               </tbody>
             </table>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-gray-400">
+                Mostrando página {currentPage} de {totalPages} — {totalUsers} usuarios totales
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  className="px-3 py-2 rounded bg-[var(--color-secondary-bg)] text-[var(--color-text-light)] disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-2 rounded ${page === currentPage ? 'bg-[var(--color-accent-primary)] text-white' : 'bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]'}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  className="px-3 py-2 rounded bg-[var(--color-secondary-bg)] text-[var(--color-text-light)] disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
           </>
         )}
       </div>

@@ -86,7 +86,7 @@ export const cancelPremium = () => api.post('/usuarios/cancelar-plan');
 
 // --- Funciones ADMIN ---
 // Usuarios
-export const adminFetchUsers = () => api.get('/admin/users');
+export const adminFetchUsers = (params?: any) => api.get('/admin/users', { params });
 export const adminGetUser = (userId: string) => api.get(`/admin/users/${userId}`);
 export const adminUpdateUser = (userId: string, data: any) => api.patch(`/admin/users/${userId}`, data);
 export const adminDeleteUser = (userId: string) => api.delete(`/admin/users/${userId}`);
@@ -127,7 +127,7 @@ export const adminFetchConfig = () => api.get('/admin/config');
 export const adminUpdateConfig = (data: any) => api.put('/admin/config', data);
 
 // Logs
-export const adminFetchLogs = () => api.get('/admin/logs');
+export const adminFetchLogs = (params?: any) => api.get('/admin/logs', { params });
 export const adminGetLog = (logId: string) => api.get(`/admin/logs/${logId}`);
 export const adminDeleteLog = (logId: string) => api.delete(`/admin/logs/${logId}`);
 

@@ -10,7 +10,7 @@ const AdminLogs = () => {
     setLoading(true);
     adminFetchLogs()
       .then((res) => {
-        setLogs(res.data);
+        setLogs(res.data.logs || []);
         setError(null);
       })
       .catch(() => {

@@ -135,14 +135,17 @@ async def get_user_portfolio(user_id: str, current_user: User = Depends(get_curr
     portfolio = db.query(Portfolio).filter(Portfolio.user_id == int(user_id)).order_by(desc(Portfolio.generated_at)).first()
     if portfolio:
         return {
-            "id": portfolio.id,
-            "user_id": portfolio.user_id,
-            "generated_at": portfolio.generated_at,
-            "assets": [{"ticker": a.ticker, "name": a.name, "allocation_pct": a.allocation_pct, "reason": a.reason} for a in portfolio.assets],
-            "metrics": portfolio.metrics,
-            "simulation_history": portfolio.simulation_history
+            "portfolio": {
+                "id": portfolio.id,
+                "user_id": portfolio.user_id,
+                "generated_at": portfolio.generated_at,
+                "assets": [{"ticker": a.ticker, "name": a.name, "allocation_pct": a.allocation_pct, "reason": a.reason} for a in portfolio.assets],
+                "metrics": portfolio.metrics,
+                "simulation_history": portfolio.simulation_history
+            }
         }
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+
+    return {"portfolio": None}
 
 @router.post("/simulate", response_description="Execute or save a simulation")
 async def simulate_portfolio(
