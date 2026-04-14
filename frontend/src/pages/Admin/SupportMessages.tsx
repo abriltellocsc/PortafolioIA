@@ -82,6 +82,7 @@ const SupportMessages = () => {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<'pendiente' | 'respondido' | 'resuelto' | 'todos'>('pendiente');
 
   const fetchMessages = () => {
     setLoading(true);
@@ -106,6 +107,12 @@ const SupportMessages = () => {
     fetchMessages();
   }, []);
 
+  const filteredMessages = messages.filter((m: any) => {
+    const status = (m.status || 'pendiente').toLowerCase();
+    if (filterStatus === 'todos') return true;
+    return status === filterStatus;
+  });
+
   const handleDelete = async (messageId: string) => {
     if (!window.confirm("¿Seguro que deseas eliminar este mensaje?")) return;
     setDeletingId(messageId);
@@ -124,17 +131,29 @@ const SupportMessages = () => {
 
   return (
     <div className="p-8">
-      <h2 className="text-xl font-bold mb-4">Soporte y Mensajes</h2>
+      <div className="mb-4 flex flex-wrap gap-3 items-center">
+        <h2 className="text-xl font-bold">Soporte y Mensajes</h2>
+        {filterStatus === 'pendiente' && (
+          <span className="inline-flex items-center rounded-full bg-red-100 text-red-800 px-3 py-1 text-sm font-semibold">
+            Solo pendientes
+          </span>
+        )}
+      </div>
       <div className="mb-4 flex flex-wrap gap-4 items-end">
         <input className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]" placeholder="Buscar usuario..." />
-        <select className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]">
-          <option value="">Todos los estados</option>
+        <select
+          className="border rounded px-3 py-2 bg-[var(--color-secondary-bg)] text-[var(--color-text-light)]"
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value as any)}
+        >
           <option value="pendiente">Pendiente</option>
+          <option value="respondido">Respondido</option>
           <option value="resuelto">Resuelto</option>
+          <option value="todos">Todos</option>
         </select>
         <button className="ml-auto bg-teal-600 text-white px-4 py-2 rounded" onClick={() => {
           const headers = ["Usuario", "Fecha", "Estado", "Mensaje"];
-          const rows = messages.map(m => [
+          const rows = filteredMessages.map(m => [
             m.user && m.user.trim() !== '' ? m.user : (m.name || '-'),
             (() => {
               if (m.created_at) {
@@ -186,12 +205,12 @@ const SupportMessages = () => {
                 </tr>
               </thead>
               <tbody className="text-[var(--color-text-light)]">
-                {messages.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center py-4">No hay mensajes registrados.</td></tr>
+                {filteredMessages.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-4">No hay mensajes registrados para el estado seleccionado.</td></tr>
                 ) : (
                   (() => {
                     // Ordenar mensajes con premiums primero
-                    const sortedMessages = [...messages].sort((a: any, b: any) => {
+                    const sortedMessages = [...filteredMessages].sort((a: any, b: any) => {
                       const aIsPremium = a.is_premium || a.user_is_premium || false;
                       const bIsPremium = b.is_premium || b.user_is_premium || false;
                       if (aIsPremium && !bIsPremium) return -1;
