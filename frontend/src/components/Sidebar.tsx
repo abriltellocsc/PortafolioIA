@@ -38,12 +38,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onL
   };
 
   return (
-    <div className="w-64 bg-white rounded-lg shadow-md p-6 flex flex-col fixed h-full m-4 border border-gray-200">
+    <div className="w-64 bg-white rounded-lg shadow-md p-6 flex flex-col fixed top-4 left-4 bottom-4 border border-gray-200">
       <div className="text-xl font-bold text-gray-900 mb-6 text-center tracking-tight">PortafolioIA</div>
       {userName && (
         <div className="text-sm text-gray-700 mb-6 text-center font-medium border-b border-gray-200 pb-4">{userName}</div>
       )}
-      <nav className="flex-grow">
+      <nav className="mb-6">
         <ul className="space-y-1">
           {allNavItems.map((item) => (
             <li key={item.path}>
