@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import InfoTooltip from '../components/InfoTooltip';
 import { fetchStockData } from '../services/api';
+import { getChartContext } from '../utils/chartContext';
+import useUserExperienceLevel from '../hooks/useUserExperienceLevel';
 
 interface MyPortfolioPageProps {
   portfolio: any;
@@ -42,6 +45,8 @@ const formatDisplayName = (name?: string) => {
 
 const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
   const performanceData = generatePerformanceData();
+  const experienceLevel = useUserExperienceLevel(portfolio);
+  const performanceDescription = getChartContext('portfolio.performance.description', experienceLevel);
   const [stocksData, setStocksData] = useState<Record<string, StockData>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +105,7 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
             Mi Portafolio
           </h1>
           <p className="text-gray-600 text-sm mt-1">Gestiona y monitorea tus inversiones</p>
+          <p className="text-gray-600 mt-4 max-w-3xl leading-relaxed">{performanceDescription}</p>
         </div>
           
         {/* Botón de actualización */}
@@ -122,10 +128,17 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
 
         {/* Gráfico de Rendimiento */}
         <div className="mb-8 bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
-          <h2 className="text-3xl font-bold text-blue-900 mb-6 flex items-center gap-3">
-            <i className="fas fa-chart-line text-blue-900"></i>
-            Rendimiento del Portafolio (Últimos 12 Meses)
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl font-bold text-blue-900 flex items-center gap-3">
+              <i className="fas fa-chart-line text-blue-900"></i>
+              Rendimiento del Portafolio (Últimos 12 Meses)
+            </h2>
+            <InfoTooltip
+              title="Rendimiento del Portafolio"
+              description="Este gráfico muestra la evolución simulada del valor de tu portafolio durante los últimos 12 meses. No es un valor real histórico si no datos generados automáticamente."
+              example="Por ejemplo, subidas y bajadas reflejan fluctuaciones posibles basadas en tendencias recientes." 
+            />
+          </div>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart
             data={performanceData}
@@ -163,10 +176,18 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
 
       {/* Tabla de Holdings */}
       <div>
-        <h2 className="text-2xl font-semibold text-blue-900 mb-6 flex items-center gap-2">
-          <i className="fas fa-list text-blue-900"></i>
-          Mis Activos
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-semibold text-blue-900 flex items-center gap-2">
+            <i className="fas fa-list text-blue-900"></i>
+            Mis Activos
+          </h2>
+          <InfoTooltip
+            title="Mis Activos"
+            description="Aquí aparece cada elemento de tu portafolio, el porcentaje que ocupa y cómo ha variado su precio."
+            example="Ticker es el símbolo del activo, y P/L muestra si está ganando o perdiendo valor."
+          />
+        </div>
+        <p className="text-gray-500 text-sm mb-4">Las columnas indican el nombre corto, la participación en tu cartera, el precio actual y el cambio reciente.</p>
         <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50 border-b border-gray-200">

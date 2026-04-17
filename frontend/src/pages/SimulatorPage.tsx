@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import InfoTooltip from '../components/InfoTooltip';
+import { getChartContext } from '../utils/chartContext';
+import useUserExperienceLevel from '../hooks/useUserExperienceLevel';
 
 interface SimulatorPageProps {
   portfolio: any;
@@ -136,6 +139,8 @@ const getAssetButtonClasses = (selected: boolean) => selected ? 'p-4 rounded-lg 
 const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
   const [amount, setAmount] = useState(10000);
   const [horizon, setHorizon] = useState(12); // Meses
+  const experienceLevel = useUserExperienceLevel(portfolio);
+  const simulationDescription = getChartContext('simulator.projection.description', experienceLevel);
   const [riskAversion, setRiskAversion] = useState(50); // 0-100
   const [monthlyContribution, setMonthlyContribution] = useState(0);
   const [inflationRate, setInflationRate] = useState(3); // % anual
@@ -260,16 +265,26 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           <p className="text-slate-600 text-xl relative z-10">
             Proyecta el crecimiento de tu portafolio con análisis Monte Carlo
           </p>
+          <p className="text-gray-600 mt-4 max-w-3xl mx-auto relative z-10 leading-relaxed">
+            {simulationDescription}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Controles del Simulador (tema profesional) */}
           <div className="lg:col-span-1 space-y-6 bg-white p-6 rounded-xl border-2 border-blue-100 shadow">
             <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <i className="fas fa-sliders-h text-blue-600"></i>
                 Parámetros
               </h2>
+              <InfoTooltip
+                title="Parámetros"
+                description="Ajusta el monto, horizonte, riesgo y otros detalles para ver cómo pueden cambiar tus posibles resultados futuros."
+                example="Un mayor horizonte puede aumentar el valor final esperado, pero también el rango de resultados."
+              />
+            </div>
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="text-sm text-blue-600 hover:text-blue-500 font-bold transition-colors"
@@ -280,10 +295,17 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
 
           {/* Selector de Tipo de Activo (mapeado a tema azul) */}
           <div className="mb-6 p-4 bg-white rounded-xl border-2 border-blue-100 max-h-64 overflow-y-auto">
-            <label className="block text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <i className="fas fa-layer-group text-blue-600"></i>
-              Tipo de Activo a Simular
-            </label>
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i className="fas fa-layer-group text-blue-600"></i>
+                Tipo de Activo a Simular
+              </label>
+              <InfoTooltip
+                title="Tipo de Activo"
+                description="Selecciona una categoría de inversión para el simulador. Cada tipo tiene retorno y riesgo diferentes."
+                example="Un activo tech suele tener más riesgo pero puede generar mayores retornos."
+              />
+            </div>
             <div className="grid grid-cols-1 gap-3">
               {ASSET_TYPES.map((asset) => (
                 <button
@@ -321,13 +343,18 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           
           {/* Monto Inicial */}
           <div>
-            <label htmlFor="amount" className="block text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <label htmlFor="amount" className="block text-sm font-semibold text-gray-200 flex items-center gap-2">
                 <i className="fas fa-dollar-sign text-blue-600"></i>
                 Monto Inicial
-              </span>
-              <span className="text-blue-600 text-lg">${amount.toLocaleString()}</span>
-            </label>
+              </label>
+              <InfoTooltip
+                title="Monto Inicial"
+                description="Es el dinero con el que comienzas la simulación. A mayor monto, mayor será el valor proyectado futuro."
+                example="Si eliges $10,000, el simulador parte de ese capital base."
+              />
+            </div>
+            <span className="text-blue-600 text-lg">${amount.toLocaleString()}</span>
             <input
               type="range"
               id="amount"
@@ -347,13 +374,18 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           
           {/* Horizonte de Inversión */}
           <div>
-            <label htmlFor="horizon" className="block text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <label htmlFor="horizon" className="block text-sm font-semibold text-gray-200 flex items-center gap-2">
                 <i className="fas fa-calendar-alt text-blue-600"></i>
                 Horizonte
-              </span>
-              <span className="text-blue-600 text-lg">{horizon} meses</span>
-            </label>
+              </label>
+              <InfoTooltip
+                title="Horizonte"
+                description="Es el tiempo durante el cual el simulador proyecta tu inversión. Más meses implican más variación potencial."
+                example="60 meses son 5 años, por eso el valor proyectado puede subir mucho más."
+              />
+            </div>
+            <span className="text-blue-600 text-lg">{horizon} meses</span>
             <input
               type="range"
               id="horizon"
@@ -373,13 +405,18 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           
           {/* Aversión al Riesgo */}
           <div>
-            <label htmlFor="riskAversion" className="block text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <label htmlFor="riskAversion" className="block text-sm font-semibold text-gray-200 flex items-center gap-2">
                 <i className="fas fa-shield-alt text-amber-400"></i>
                 Tolerancia al Riesgo
-              </span>
-              <span className="text-amber-400 text-lg">{riskAversion}%</span>
-            </label>
+              </label>
+              <InfoTooltip
+                title="Tolerancia al Riesgo"
+                description="Determina cuánto riesgo estás dispuesto a asumir. Más porcentaje significa mayor variación y potencial ganancia/pérdida."
+                example="Un 80% es agresivo y puede subir rápido, pero también bajar más cuando el mercado cae."
+              />
+            </div>
+            <span className="text-amber-400 text-lg">{riskAversion}%</span>
             <input
               type="range"
               id="riskAversion"
@@ -469,10 +506,17 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           {/* Métricas principales (tarjetas claras) */}
           <div className="bg-white p-6 rounded-xl border-2 border-blue-100 shadow">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <i className="fas fa-chart-bar text-blue-600"></i>
-                Resultados Proyectados
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fas fa-chart-bar text-blue-600"></i>
+                  Resultados Proyectados
+                </h2>
+                <InfoTooltip
+                  title="Resultados Proyectados"
+                  description="Muestra el valor promedio, ganancia estimada y los posibles mejores y peores escenarios según tu configuración."
+                  example="El escenario optimista representa el percentil 95 de 100 simulaciones."
+                />
+              </div>
               {/* Badge del activo seleccionado */}
               <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
                 <i className={`fas ${ASSET_TYPES.find(a => a.id === selectedAsset)?.icon} text-blue-600`}></i>
@@ -576,10 +620,17 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
         {/* Gráfico de Evolución del Portafolio con 3 Escenarios */}
         <div className="mt-8 bg-white p-8 rounded-xl border-2 border-blue-100 shadow">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-              <i className="fas fa-chart-line text-blue-600"></i>
-              Proyección de Crecimiento
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                <i className="fas fa-chart-line text-blue-600"></i>
+                Proyección de Crecimiento
+              </h2>
+              <InfoTooltip
+                title="Proyección de Crecimiento"
+                description="Muestra la evolución proyectada de tu inversión con los distintos escenarios generados por el simulador."
+                example="Puedes comparar cómo cambia el valor entre el escenario esperado, optimista y pesimista."
+              />
+            </div>
             <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
               <i className="fas fa-info-circle text-blue-400"></i>
               <span className="text-sm text-slate-500">Basado en 100 simulaciones Monte Carlo</span>

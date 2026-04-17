@@ -2,7 +2,7 @@
 // import SystemConfig from './pages/Admin/SystemConfig';
 // Componente principal de la aplicación
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Routes, Route } from 'react-router-dom';
 import AuthModal from './components/AuthModal';
 import Dashboard from './pages/Dashboard';
@@ -249,19 +249,19 @@ function App() {
         {/* Rutas protegidas que requieren autenticación */}
         <Route
           path="/dashboard/*"
-          element={isAuthenticated ? <Dashboard onLogout={handleLogout} portfolio={portfolio} isAdmin={isAdmin} userName={userName} isUserPremium={isUserPremium} /> : null}
+          element={isAuthenticated ? <Dashboard onLogout={handleLogout} portfolio={portfolio} isAdmin={isAdmin} userName={userName} isUserPremium={isUserPremium} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/plan"
-          element={isAuthenticated ? <PlanPage initialIsUserPremium={isUserPremium} onUpgradeSuccess={handleUpgradeSuccess} onCancelSuccess={handleCancelSuccess} /> : null}
+          element={isAuthenticated ? <PlanPage initialIsUserPremium={isUserPremium} onCancelSuccess={handleCancelSuccess} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/pago"
-          element={isAuthenticated ? <Pago onSubscribeSuccess={handleUpgradeSuccess} /> : null}
+          element={isAuthenticated ? <Pago onSubscribeSuccess={handleUpgradeSuccess} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/risk-profile-form"
-          element={isAuthenticated ? <RiskProfileForm onPortfolioGenerated={handlePortfolioGenerated} /> : null}
+          element={isAuthenticated ? <RiskProfileForm onPortfolioGenerated={handlePortfolioGenerated} /> : <Navigate to="/" replace />}
         />
         {/* Rutas de administración, solo para admin */}
         <Route path="/admin/*" element={isAuthenticated && isAdmin ? <AdminDashboard onLogout={handleLogout} /> : null} />

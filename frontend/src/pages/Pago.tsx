@@ -21,15 +21,6 @@ const Pago: React.FC<PagoProps> = ({ onSubscribeSuccess }) => {
     setCardNumber(value);
   };
 
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9/]/g, '').slice(0, 5);
-    setExpiry(value);
-  };
-
-  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 3);
-    setCvc(value);
-  };
 
   const handleSubscribe = async () => {
     if (!cardNumber.trim() || !expiry.trim() || !cvc.trim()) {

@@ -4,11 +4,10 @@ import CancelPremiumButton from '../components/CancelPremiumButton';
 
 interface PlanPageProps {
   initialIsUserPremium?: boolean;
-  onUpgradeSuccess?: () => Promise<void>;
   onCancelSuccess?: () => Promise<void>;
 }
 
-const PlanPage: React.FC<PlanPageProps> = ({ initialIsUserPremium = false, onUpgradeSuccess, onCancelSuccess }) => {
+const PlanPage: React.FC<PlanPageProps> = ({ initialIsUserPremium = false, onCancelSuccess }) => {
   const navigate = useNavigate();
   const [isUserPremium, setIsUserPremium] = useState(initialIsUserPremium);
 

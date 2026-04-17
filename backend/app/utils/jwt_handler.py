@@ -13,7 +13,8 @@ def signJWT(user_id: str, role: str = "user") -> Dict[str, str]:
     payload = {
         "user_id": user_id,
         "role": role,
-        "expires": time.time() + 600  # Token expira en 10 minutos
+        # Token expira en 1 día para evitar que el usuario pierda sesión con refrescos frecuentes
+        "expires": time.time() + 86400
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return {"access_token": token}
