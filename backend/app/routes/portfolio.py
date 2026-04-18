@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.portfolio import Portfolio, Asset
 from app.models.support_message import SupportMessage
+from app.models.news_article import NewsArticle
 from app.routes.auth import get_current_user
 from app.services.optimizer_service import generate_portfolio, get_market_data, calculate_metrics, normalize_metrics
 from sqlalchemy.orm import Session
@@ -238,31 +239,56 @@ async def submit_contact_message(
         )
 
 @router.get("/news", response_description="Get financial news")
-async def get_news():
+async def get_news(db: Session = Depends(get_db)):
     # Mock de noticias. En una implementación real, se integraría con una API de noticias.
     mock_news = [
         {
-            "id": "1",
             "source": "Bloomberg",
             "title": "Mercados Globales Reaccionan a Nuevas Políticas Económicas",
             "summary": "Analistas observan con cautela los movimientos en las principales bolsas tras los anuncios de la Reserva Federal.",
-            "date": "2023-10-26T10:00:00Z"
+            "date": "2023-10-26T10:00:00Z",
+            "url": "https://www.bloomberg.com/markets",
+            "category": "Economía",
+            "author": "Daniel Castro"
         },
         {
-            "id": "2",
             "source": "Reuters",
             "title": "Innovación en IA Impulsa Acciones Tecnológicas",
             "summary": "El sector tecnológico muestra un fuerte crecimiento impulsado por avances en inteligencia artificial y semiconductores.",
-            "date": "2023-10-26T09:30:00Z"
+            "date": "2023-10-26T09:30:00Z",
+            "url": "https://www.reuters.com/technology/",
+            "category": "Tecnología",
+            "author": "María López"
         },
         {
-            "id": "3",
             "source": "Financial Times",
             "title": "El Futuro de las Inversiones Sostenibles",
             "summary": "Cada vez más inversores buscan oportunidades en empresas con sólidos criterios ESG (Ambientales, Sociales y de Gobernanza).",
-            "date": "2023-10-25T15:00:00Z"
+            "date": "2023-10-25T15:00:00Z",
+            "url": "https://www.ft.com/sustainable-investing",
+            "category": "Economía",
+            "author": "Laura Martínez"
         }
     ]
+
+    # Eliminar noticias antiguas antes de guardar las nuevas
+    db.query(NewsArticle).delete()
+    db.commit()
+
+    for item in mock_news:
+        article = NewsArticle(
+            source=item["source"],
+            title=item["title"],
+            summary=item["summary"],
+            date=datetime.fromisoformat(item["date"]),
+            url=item["url"],
+            category=item.get("category"),
+            author=item.get("author")
+        )
+        db.add(article)
+
+    db.commit()
+
     return mock_news
 
 ## Endpoint y lógica de chatbot eliminados

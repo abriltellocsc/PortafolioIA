@@ -35,6 +35,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, activeSection, onSectionCha
                 Auditoría de Usuarios
               </button>
             </li>
+            <li>
+              <button 
+                onClick={() => onSectionChange('education')} 
+                className={`w-full text-left flex items-center gap-3 px-6 py-3 rounded-lg font-medium transition-colors ${activeSection === 'education' ? 'bg-[var(--color-secondary-bg)] text-[var(--color-accent-teal)]' : 'text-[var(--color-text-light)] hover:bg-[var(--color-secondary-bg)]'}`}
+              >
+                Educación
+              </button>
+            </li>
           </ul>
         </nav>
       </div>
