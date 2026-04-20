@@ -9,16 +9,23 @@ interface InfoTooltipProps {
 const InfoTooltip: React.FC<InfoTooltipProps> = ({ title, description, example }) => {
   return (
     <div className="relative inline-flex items-center group">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white text-sm font-bold cursor-help transition-transform duration-200 group-hover:scale-110">
-        i
+      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-bold cursor-help hover:bg-blue-700 transition-colors duration-200 hover:shadow-md flex-shrink-0">
+        ?
       </div>
-      <div className="pointer-events-none absolute z-20 hidden w-80 max-w-[22rem] rounded-2xl bg-slate-900 p-4 text-left text-sm text-slate-100 shadow-2xl group-hover:block top-full left-1/2 -translate-x-1/2 mt-3">
-        {title && <p className="font-semibold text-white mb-2">{title}</p>}
-        <p className="text-slate-200 leading-relaxed">{description}</p>
+      {/* Tooltip Container - Más ancho para que no se corte */}
+      <div className="pointer-events-auto absolute z-50 hidden px-4 py-3 rounded-lg bg-white border border-gray-300 text-left text-xs text-gray-800 shadow-xl group-hover:block top-full left-1/2 -translate-x-1/2 mt-3 w-96 opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200">
+        {/* Flecha visual */}
+        <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-t border-l border-gray-300 rotate-45"></div>
+        
+        {/* Contenido */}
+        {title && <p className="font-semibold text-gray-900 mb-1.5">{title}</p>}
+        <p className="text-gray-700 leading-relaxed text-xs whitespace-normal">{description}</p>
+        
+        {/* Ejemplo (si existe) */}
         {example && (
-          <div className="mt-3 rounded-xl bg-slate-800 p-3 text-slate-300 border border-slate-700">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400 mb-1">Ejemplo</p>
-            <p>{example}</p>
+          <div className="mt-2.5 rounded-md bg-gray-50 p-2.5 border border-gray-200">
+            <p className="text-xs font-semibold text-gray-600 mb-1">Ejemplo:</p>
+            <p className="text-xs text-gray-700 whitespace-normal leading-relaxed">{example}</p>
           </div>
         )}
       </div>

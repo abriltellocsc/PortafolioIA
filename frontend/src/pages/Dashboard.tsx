@@ -4,7 +4,9 @@ import DashboardOverview from '../components/DashboardOverview';
 import RecommendationsPage from './RecommendationsPage';
 import MyPortfolioPage from './MyPortfolioPage';
 import SimulatorPage from './SimulatorPage';
-import EducationPage from './EducationPage';
+import CoursesPage from './CoursesPage';
+import CourseDetail from './CourseDetail';
+import QuizPage from './QuizPage';
 import NewsPage from './NewsPage';
 import SupportPage from './SupportPage';
 import { Route, Routes, useLocation } from 'react-router-dom';
@@ -68,7 +70,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, portfolio, isAdmin, use
             <Route path="recommendations" element={<RecommendationsPage portfolio={portfolio} />} />
             <Route path="my-portfolio" element={<MyPortfolioPage portfolio={portfolio} />} />
             <Route path="simulator" element={<SimulatorPage portfolio={portfolio} />} />
-            <Route path="education" element={<EducationPage />} />
+            <Route path="education" element={<CoursesPage />} />
+            <Route path="course/:courseId" element={<CourseDetail />} />
+            <Route path="course/:courseId/module/:moduleId/quiz" element={<QuizPage />} />
             <Route path="news" element={<NewsPage />} />
             <Route path="support" element={<SupportPage />} />
             <Route path="*" element={<DashboardOverview portfolio={portfolio} isUserPremium={isUserPremium} />} /> {/* Default route */}

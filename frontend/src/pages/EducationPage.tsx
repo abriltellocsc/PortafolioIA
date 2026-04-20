@@ -752,7 +752,7 @@ const EducationPage: React.FC = () => {
         <ul>
           <li>Intercambia appreciated stock por diversified portfolio</li>
           <li>Difiere capital gains tax</li>
-          <li>Mantiene diversification</li>
+          <li>Mantiene diversificación</li>
         </ul>
 
         <h4>Municipal Bonds</h4>
@@ -1074,7 +1074,7 @@ const EducationPage: React.FC = () => {
         <h4>Monedas</h4>
         <ul>
           <li><strong>Superávit comercial:</strong> Fortalece la moneda</li>
-          <li><strong>Déficit comercial:</strong> Debilitan la moneda</li>
+          <li><strong>Déficit comercial:</strong> Debilita la moneda</li>
           <li><strong>Manipulación monetaria:</strong> Acusaciones afectan confianza</li>
         </ul>
 

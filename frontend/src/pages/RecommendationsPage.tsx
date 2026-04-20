@@ -75,16 +75,96 @@ const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) 
         </div>
 
         <div className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-6">
             <h2 className="text-2xl font-bold text-blue-900">Tu Perfil de Inversor</h2>
+            <InfoTooltip
+              title="¿Qué es tu Perfil?"
+              description="Tu perfil se determinó basado en tus respuestas a la encuesta: experiencia, objetivo, tolerancia al riesgo y horizonte temporal. Define cuánto riesgo puedes soportar."
+              example="Perfil Agresivo = toleras -35% en años malos pero buscas +20% anual. Perfil Conservador = prefieres -5% máximo pero ganas 6-8%."
+            />
           </div>
-          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-            <h3 className="text-2xl font-bold text-blue-900 mb-4">Perfil {investorProfile.name}</h3>
-            <p className="text-gray-700 leading-relaxed">{investorProfile.description}</p>
+          
+          {/* Cards de perfiles educativos */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className={`p-4 rounded-lg border-2 transition-all ${riskLevel === 'low' ? 'bg-green-50 border-green-500 ring-2 ring-green-300' : 'bg-gray-50 border-gray-200'}`}>
+              <p className="text-lg font-bold text-gray-900 mb-2">Conservador</p>
+              <p className="text-xs text-gray-700 mb-3">Prefieres seguridad</p>
+              <div className="space-y-2 text-xs text-gray-700">
+                <p><strong>Caída típica:</strong> -5%</p>
+                <p><strong>Ganancia esperada:</strong> 6-8% anual</p>
+              </div>
+            </div>
+            
+            <div className={`p-4 rounded-lg border-2 transition-all ${riskLevel === 'medium' ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-300' : 'bg-gray-50 border-gray-200'}`}>
+              <p className="text-lg font-bold text-gray-900 mb-2">Balanceado</p>
+              <p className="text-xs text-gray-700 mb-3">Equilibrio riesgo/retorno</p>
+              <div className="space-y-2 text-xs text-gray-700">
+                <p><strong>Caída típica:</strong> -15%</p>
+                <p><strong>Ganancia esperada:</strong> 10-12% anual</p>
+              </div>
+            </div>
+            
+            <div className={`p-4 rounded-lg border-2 transition-all ${riskLevel === 'high' ? 'bg-orange-50 border-orange-500 ring-2 ring-orange-300' : 'bg-gray-50 border-gray-200'}`}>
+              <p className="text-lg font-bold text-gray-900 mb-2">Agresivo</p>
+              <p className="text-xs text-gray-700 mb-3">Buscas máxima ganancia</p>
+              <div className="space-y-2 text-xs text-gray-700">
+                <p><strong>Caída típica:</strong> -35%</p>
+                <p><strong>Ganancia esperada:</strong> 15-25% anual</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Descripción del perfil actual */}
+          <div className={`rounded-lg p-6 border-l-4 ${
+            riskLevel === 'low' ? 'bg-green-50 border-green-600' :
+            riskLevel === 'high' ? 'bg-orange-50 border-orange-600' :
+            'bg-blue-50 border-blue-600'
+          }`}>
+            <p className="text-xl font-bold text-gray-900 mb-2">Tu Perfil: {investorProfile.name}</p>
+            <p className="text-gray-800 leading-relaxed mb-3">{investorProfile.description}</p>
+            <div className={`bg-white p-3 rounded-lg border-l-4 text-sm ${
+              riskLevel === 'low' ? 'border-green-500 text-green-900' :
+              riskLevel === 'high' ? 'border-orange-500 text-orange-900' :
+              'border-blue-500 text-blue-900'
+            }`}>
+              <p className="font-semibold mb-1">Lo que significa para ti:</p>
+              {riskLevel === 'low' && (
+                <p>Tu portafolio enfatiza <strong>seguridad</strong>. Invertirás principalmente en bonos y activos estables. Crecimiento lento pero predecible.</p>
+              )}
+              {riskLevel === 'medium' && (
+                <p>Tu portafolio busca <strong>equilibrio</strong>. Mezcla acciones (crecimiento) y bonos (seguridad). Ideal para la mayoría de inversores.</p>
+              )}
+              {riskLevel === 'high' && (
+                <p>Tu portafolio enfatiza <strong>crecimiento</strong>. Mayormente acciones y activos volátiles. Aceptas grandes cambios por potencial de alto retorno.</p>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-blue-100">
+          {/* SECCIÓN EDUCATIVA: Diversificación */}
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-l-4 border-blue-600">
+            <div className="flex items-start gap-3">
+              <i className="fas fa-lightbulb text-blue-600 text-2xl mt-1"></i>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-blue-900 mb-2">¿Por qué diversificación?</h3>
+                <p className="text-gray-700 text-sm mb-3">
+                  En lugar de invertir TODO en una sola empresa, distribuimos tu dinero en múltiples activos. Si uno baja, otros pueden compensar.
+                </p>
+                <div className="grid grid-cols-2 gap-4 text-sm bg-white p-3 rounded-lg">
+                  <div className="border-r border-gray-200">
+                    <p className="font-semibold text-gray-800">❌ Sin diversificación</p>
+                    <p className="text-gray-600 text-xs mt-1">$10,000 solo en Apple: -20% = pierdes $2,000</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">✅ Con diversificación</p>
+                    <p className="text-gray-600 text-xs mt-1">$10,000 en 8 activos: -20% solo sube a -5% total</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <div className="flex flex-col gap-3 mb-4">
