@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { optimizePortfolio, saveRiskProfile } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import InfoTooltip from './InfoTooltip';
+import RiskProfileIntro from './RiskProfileIntro';
 
 // Props del componente
 interface RiskProfileFormProps {
@@ -12,6 +14,8 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
   const navigate = useNavigate();
   // Estado para controlar qué pregunta se muestra
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  // Estado para mostrar la intro educativa
+  const [showIntro, setShowIntro] = useState(true);
   // Estado para almacenar las respuestas del usuario
   const [answers, setAnswers] = useState<any>({});
   // Estado para mostrar carga
@@ -147,6 +151,15 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
 
   const currentQ = questions[currentQuestion];
 
+  // Mostrar intro educativa primero
+  if (showIntro) {
+    return (
+      <RiskProfileIntro 
+        onContinue={() => setShowIntro(false)}
+      />
+    );
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Subtle Background */}
@@ -169,7 +182,12 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
 
         {/* Título */}
         <h2 className="text-3xl md:text-4xl font-bold text-blue-900 text-center mb-2">Perfil de Riesgo</h2>
-        <p className="text-center text-gray-600 mb-8">Responde 5 preguntas para que la IA genere tu portafolio personalizado</p>
+        <p className="text-center text-gray-600 mb-6">Responde 5 preguntas para que la IA genere tu portafolio personalizado</p>
+        
+        {/* Mensaje educativo inicial */}
+        <div className="mb-6 bg-blue-50 border-l-4 border-blue-600 p-4 rounded text-sm text-gray-700">
+          <p><strong>💡 Consejo:</strong> No hay respuestas &quot;correctas&quot; o &quot;incorrectas&quot;. Tus respuestas nos ayudan a entender tu situación y crear un portafolio que sea PARA TI.</p>
+        </div>
 
         {/* Indicador de progreso */}
         <div className="flex items-center justify-center space-x-2 mb-8">
@@ -192,7 +210,37 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
             <label className="block text-lg font-semibold text-gray-900 mb-4">
               Pregunta {currentQuestion + 1} de {questions.length}
             </label>
-            <p className="text-base font-medium text-gray-700 mb-4">{currentQ.question}</p>
+            <div className="flex items-center gap-2 mb-4">
+              <p className="text-base font-medium text-gray-700">{currentQ.question}</p>
+              {currentQuestion === 1 && (
+                <InfoTooltip
+                  title="Tu Experiencia"
+                  description="Tu nivel de conocimiento sobre inversiones. Nos ayuda a personalizar las explicaciones."
+                  example="Principiante: Nunca invertiste. Intermedio: 3+ años. Avanzado: Inviertes regularmente."
+                />
+              )}
+              {currentQuestion === 2 && (
+                <InfoTooltip
+                  title="Objetivo de Inversión"
+                  description="Para qué necesitas este dinero. Define el tiempo que tiene para crecer."
+                  example="Jubilación: 20+ años. Casa: 5-10 años. Crecimiento: flexible."
+                />
+              )}
+              {currentQuestion === 3 && (
+                <InfoTooltip
+                  title="Tu Tolerancia al Riesgo"
+                  description="Cuánto pueden bajar tus inversiones sin asustarte. Más riesgo = mayor ganancia pero también mayores caídas."
+                  example="Baja: -5% típico. Media: -15% típico. Alta: -35% típico en años malos."
+                />
+              )}
+              {currentQuestion === 4 && (
+                <InfoTooltip
+                  title="Monto Inicial"
+                  description="Dinero que inviertes HOY. Recomendación: solo dinero que NO necesites en los próximos 3+ años."
+                  example="Si ganas $3,000 y gastas $2,500, considera invertir $300-500 de sobra."
+                />
+              )}
+            </div>
             {
               currentQ.type === "select" && (
                 <select
@@ -257,26 +305,37 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
                         </label>
                       );
                     } else {
+                      let optionDescription = '';
+                      if (currentQuestion === 3) {
+                        if (option.value === 'low') optionDescription = '→ Tu inversión baja típicamente 5% en año malo. Ganancias esperadas: 6-8% anual.';
+                        if (option.value === 'medium') optionDescription = '→ Caída potencial: 15% en año malo. Ganancias esperadas: 10-12% anual.';
+                        if (option.value === 'high') optionDescription = '→ Caída potencial: 35% en año malo. Ganancias esperadas: 15-25% anual.';
+                      }
+                      
                       return (
-                        <label 
-                          key={option.value}
-                          className={`flex items-center p-4 border rounded-lg cursor-pointer transition duration-200 ${
-                            answers[currentQ.id] === option.value
-                              ? 'bg-blue-50 border-blue-900 shadow-sm'
-                              : 'bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={currentQ.id}
-                            value={option.value}
-                            checked={answers[currentQ.id] === option.value}
-                            onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
-                            className="h-5 w-5 text-blue-900 border-gray-300 focus:ring-blue-900"
-                            required
-                          />
-                          <span className="ml-3 text-base text-gray-900">{option.label}</span>
-                        </label>
+                        <div key={option.value}>
+                          <label 
+                            className={`flex items-center p-4 border rounded-lg cursor-pointer transition duration-200 ${
+                              answers[currentQ.id] === option.value
+                                ? 'bg-blue-50 border-blue-900 shadow-sm'
+                                : 'bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={currentQ.id}
+                              value={option.value}
+                              checked={answers[currentQ.id] === option.value}
+                              onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
+                              className="h-5 w-5 text-blue-900 border-gray-300 focus:ring-blue-900"
+                              required
+                            />
+                            <span className="ml-3 text-base text-gray-900">{option.label}</span>
+                          </label>
+                          {optionDescription && (
+                            <p className="ml-10 mt-2 text-sm text-gray-600 italic font-light">{optionDescription}</p>
+                          )}
+                        </div>
                       );
                     }
                   })}
@@ -313,9 +372,9 @@ const RiskProfileForm: React.FC<RiskProfileFormProps> = ({ onPortfolioGenerated 
               <button
                 type="submit"
                 disabled={loading || !answers[currentQ.id]}
-                className="bg-blue-900 text-white font-semibold py-3 px-8 rounded-lg hover:bg-blue-800 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-blue-900 text-white font-semibold py-3 px-8 rounded-lg hover:bg-blue-800 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center w-full sm:w-auto"
               >
-                {loading ? 'Generando...' : 'Generar Portafolio'}
+                {loading ? '⏳ Generando tu portafolio IA...' : '✨ Generar Portafolio'}
               </button>
             )}
           </div>

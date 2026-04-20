@@ -559,57 +559,82 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
               </div>
 
               {/* Mejor Caso */}
-              <div className="bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-amber-500 transition-all">
+              <div className="bg-white p-6 rounded-xl border-2 border-green-100 hover:border-green-500 transition-all hover:shadow-lg">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <i className="fas fa-trophy text-white text-2xl"></i>
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <i className="fas fa-arrow-up text-white text-2xl"></i>
                   </div>
-                  <i className="fas fa-star text-4xl text-amber-400/20"></i>
+                  <i className="fas fa-star text-4xl text-green-400/20"></i>
                 </div>
-                <p className="text-slate-600 text-sm mb-2">Mejor Escenario (95%)</p>
-                <p className="text-3xl font-bold text-amber-400">
+                <p className="text-slate-600 text-sm mb-1 font-semibold">📈 Mejor Escenario</p>
+                <p className="text-xs text-gray-500 mb-3">Mercado sube cada año (optimista, poco probable)</p>
+                <p className="text-3xl font-bold text-green-600">
                   ${results?.bestCase.toLocaleString(undefined, {maximumFractionDigits: 0}) || 'N/A'}
                 </p>
+                <p className="text-xs text-gray-600 mt-2">+{((results?.bestCase ?? 0 / amount - 1) * 100).toFixed(0)}% retorno estimado</p>
               </div>
 
               {/* Peor Caso */}
-              <div className="bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-red-500 transition-all">
+              <div className="bg-white p-6 rounded-xl border-2 border-red-100 hover:border-red-500 transition-all hover:shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-red-600 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <i className="fas fa-exclamation-triangle text-white text-2xl"></i>
+                    <i className="fas fa-arrow-down text-white text-2xl"></i>
                   </div>
                   <i className="fas fa-shield-alt text-4xl text-red-400/20"></i>
                 </div>
-                <p className="text-slate-600 text-sm mb-2">Peor Escenario (5%)</p>
-                <p className="text-3xl font-bold text-red-400">
+                <p className="text-slate-600 text-sm mb-1 font-semibold">📉 Peor Escenario</p>
+                <p className="text-xs text-gray-500 mb-3">Crisis grave (poco probable pero posible)</p>
+                <p className="text-3xl font-bold text-red-600">
                   ${results?.worstCase.toLocaleString(undefined, {maximumFractionDigits: 0}) || 'N/A'}
                 </p>
+                <p className="text-xs text-gray-600 mt-2">{((results?.worstCase ?? 0 / amount - 1) * 100).toFixed(0)}% retorno estimado</p>
               </div>
             </div>
           </div>
 
           {/* Métricas avanzadas */}
           {showAdvanced && results && (
-            <div className="bg-white p-6 rounded-xl border-2 border-blue-100 shadow">
-              <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 shadow">
+              <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <i className="fas fa-brain text-blue-600"></i>
                 Análisis Avanzado
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-lg border border-blue-50 text-center">
+                {/* Volatilidad */}
+                <div className="bg-white p-4 rounded-lg border border-blue-100 text-center hover:shadow-md transition-shadow">
                   <i className="fas fa-wave-square text-2xl text-blue-600 mb-2"></i>
-                  <p className="text-slate-500 text-xs mb-1">Volatilidad</p>
-                  <p className="text-xl font-bold text-slate-900">{results.volatility.toFixed(2)}%</p>
+                  <p className="text-slate-500 text-xs mb-1 font-semibold uppercase">Volatilidad</p>
+                  <p className="text-2xl font-bold text-slate-900 mb-2">{results.volatility.toFixed(2)}%</p>
+                  <p className="text-xs text-gray-600 bg-blue-50 p-2 rounded">Fluctuaciones típicas por año. Normal en inversiones.</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg border border-blue-50 text-center">
-                  <i className="fas fa-balance-scale text-2xl text-blue-600 mb-2"></i>
-                  <p className="text-slate-500 text-xs mb-1">Sharpe Ratio</p>
-                  <p className="text-xl font-bold text-slate-900">{results.sharpeRatio.toFixed(2)}</p>
+                
+                {/* Sharpe Ratio */}
+                <div className="bg-white p-4 rounded-lg border border-amber-100 text-center hover:shadow-md transition-shadow">
+                  <i className="fas fa-chart-pie text-2xl text-amber-600 mb-2"></i>
+                  <p className="text-slate-500 text-xs mb-1 font-semibold uppercase">Eficiencia</p>
+                  <p className="text-2xl font-bold text-slate-900 mb-2">{results.sharpeRatio.toFixed(2)}</p>
+                  <p className="text-xs text-gray-600 bg-amber-50 p-2 rounded">
+                    {results.sharpeRatio < 0.2 ? '❌ Bajo retorno vs riesgo' : results.sharpeRatio < 0.5 ? '⚠️ Normal' : '✅ Buena relación riesgo/retorno'}
+                  </p>
                 </div>
-                <div className="bg-white p-4 rounded-lg border border-blue-50 text-center">
-                  <i className="fas fa-coins text-2xl text-amber-400 mb-2"></i>
-                  <p className="text-slate-500 text-xs mb-1">Inversión Total</p>
-                  <p className="text-xl font-bold text-slate-900">${(amount + monthlyContribution * horizon).toLocaleString()}</p>
+                
+                {/* Inversión Total */}
+                <div className="bg-white p-4 rounded-lg border border-green-100 text-center hover:shadow-md transition-shadow">
+                  <i className="fas fa-coins text-2xl text-green-600 mb-2"></i>
+                  <p className="text-slate-500 text-xs mb-1 font-semibold uppercase">Inversión Total</p>
+                  <p className="text-2xl font-bold text-slate-900 mb-2">${(amount + monthlyContribution * horizon).toLocaleString()}</p>
+                  <p className="text-xs text-gray-600 bg-green-50 p-2 rounded">Dinero invertido durante {horizon} meses</p>
+                </div>
+              </div>
+              
+              {/* Explicación adicional */}
+              <div className="mt-4 bg-white p-4 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-700"><strong>📊 ¿Qué significa Sharpe Ratio?</strong></p>
+                <p className="text-xs text-gray-600 mt-2">Mide cuánta ganancia obtienes por cada unidad de riesgo asumido. Un Sharpe más alto significa mejor eficiencia.</p>
+                <div className="text-xs text-gray-600 mt-2 space-y-1">
+                  <p>• Menor a 0.2 = Poco eficiente (mucho riesgo, poco retorno)</p>
+                  <p>• 0.2 a 0.5 = Moderadamente eficiente (equilibrio razonable)</p>
+                  <p>• Mayor a 0.5 = Muy eficiente (buen balance riesgo/retorno)</p>
                 </div>
               </div>
             </div>

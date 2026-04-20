@@ -176,99 +176,121 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
 
       {/* Tabla de Holdings */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-blue-900 flex items-center gap-2">
             <i className="fas fa-list text-blue-900"></i>
             Mis Activos
           </h2>
           <InfoTooltip
-            title="Mis Activos"
-            description="Aquí aparece cada elemento de tu portafolio, el porcentaje que ocupa y cómo ha variado su precio."
-            example="Ticker es el símbolo del activo, y P/L muestra si está ganando o perdiendo valor."
+            title="Tabla de Activos"
+            description="Muestra cada activo en tu portafolio, cuánto porcentaje ocupan, su precio actual y cómo ha cambiado. Te ayuda a monitorear qué está subiendo o bajando."
+            example="Si BND muestra +0.29 (rojo), significa que subió 29 centavos hoy. Si está en verde, es ganancia."
           />
         </div>
-        <p className="text-gray-500 text-sm mb-4">Las columnas indican el nombre corto, la participación en tu cartera, el precio actual y el cambio reciente.</p>
-        <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-blue-50 border-b border-gray-200">
-              <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                  <i className="fas fa-tag mr-2"></i>Ticker
-                </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                  <i className="fas fa-percentage mr-2"></i>Allocación
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                  <i className="fas fa-dollar-sign mr-2"></i>Precio Actual
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                  <i className="fas fa-chart-bar mr-2"></i>P/L
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {assets.map((asset: any, index: number) => {
-                const stockData = stocksData[asset.ticker];
-                const realName = stockData?.name || asset.name;
-                const currentPrice = stockData?.current_price || 0;
-                const priceChange = stockData?.price_change || 0;
-                const priceChangePercent = stockData?.price_change_percent || 0;
-                const isProfit = priceChange >= 0;
-                
-                return (
-                  <tr key={index} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors border-b border-gray-200`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-blue-50 border-b border-gray-200">
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center font-bold text-white text-xs">
-                          {asset.ticker.substring(0, 2)}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-blue-900">{asset.ticker}</span>
-                          <span className="text-xs text-slate-500">{formatDisplayName(realName)}</span>
-                        </div>
+                        <i className="fas fa-tag"></i>Ticker
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <InfoTooltip title="Ticker" description="Es el código corto que identifica cada activo en el mercado financiero." example="BND = Fondo de Bonos, VOO = Índice de 500 empresas grandes, GLD = Oro" />
+                    </div>
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-300 rounded-full h-2 max-w-[80px]">
-                          <div 
-                            className="bg-gradient-to-r from-teal-600 to-cyan-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min(asset.allocation_pct, 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-gray-900 font-bold">{asset.allocation_pct.toFixed(2)}%</span>
+                        <i className="fas fa-percentage"></i>Asignación
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {currentPrice > 0 ? (
-                        <div className="flex flex-col">
-                          <span className="text-gray-900 font-bold">${currentPrice.toLocaleString()}</span>
-                          <span className="text-xs text-gray-600">{stockData?.currency || 'USD'}</span>
+                      <InfoTooltip title="Asignación" description="El porcentaje de tu dinero que está invertido en este activo." example="Si tienes $10,000 y BND es 44%, tienes $4,400 en bonos" />
+                    </div>
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-dollar-sign"></i>Precio Actual
+                      </div>
+                      <InfoTooltip title="Precio Actual" description="El precio HOY del activo en dólares USD. Se actualiza constantemente." example="VOO: $550.25 significa que cada acción del fondo cuesta ese monto hoy" />
+                    </div>
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-chart-bar"></i>P/L (Cambio Hoy)
+                      </div>
+                      <InfoTooltip title="P/L (Profit/Loss)" description="Ganancia o Pérdida de HOY. Verde = ganancia, Rojo = pérdida" example="Si muestra +1.25, el activo subió $1.25 en el día de hoy" />
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {assets.map((asset: any, index: number) => {
+                  const stockData = stocksData[asset.ticker];
+                  const realName = stockData?.name || asset.name;
+                  const currentPrice = stockData?.current_price || 0;
+                  const priceChange = stockData?.price_change || 0;
+                  const priceChangePercent = stockData?.price_change_percent || 0;
+                  const isProfit = priceChange >= 0;
+                  
+                  return (
+                    <tr key={index} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors border-b border-gray-200`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center font-bold text-white text-xs">
+                            {asset.ticker.substring(0, 2)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-blue-900">{asset.ticker}</span>
+                            <span className="text-xs text-slate-500">{formatDisplayName(realName)}</span>
+                          </div>
                         </div>
-                      ) : (
-                        <span className="text-gray-500">N/A</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
-                      {currentPrice > 0 ? (
-                        <div className="flex flex-col items-start">
-                          <span className={`flex items-center gap-1 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
-                            <i className={`fas ${isProfit ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i>
-                            {isProfit ? '+' : ''}{priceChange.toFixed(2)}
-                          </span>
-                          <span className={`text-xs ${isProfit ? 'text-green-300' : 'text-red-300'}`}>
-                            ({isProfit ? '+' : ''}{priceChangePercent.toFixed(2)}%)
-                          </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-full bg-gray-300 rounded-full h-2 max-w-[80px]">
+                            <div 
+                              className="bg-gradient-to-r from-teal-600 to-cyan-600 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min(asset.allocation_pct, 100)}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-gray-900 font-bold">{asset.allocation_pct.toFixed(2)}%</span>
                         </div>
-                      ) : (
-                        <span className="text-gray-500">--</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {currentPrice > 0 ? (
+                          <div className="flex flex-col">
+                            <span className="text-gray-900 font-bold">${currentPrice.toLocaleString()}</span>
+                            <span className="text-xs text-gray-600">{stockData?.currency || 'USD'}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">N/A</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
+                        {currentPrice > 0 ? (
+                          <div className="flex flex-col items-start">
+                            <span className={`flex items-center gap-1 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                              <i className={`fas ${isProfit ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i>
+                              {isProfit ? '+' : ''}{priceChange.toFixed(2)}
+                            </span>
+                            <span className={`text-xs ${isProfit ? 'text-green-300' : 'text-red-300'}`}>
+                              ({isProfit ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">--</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       </div>

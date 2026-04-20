@@ -102,23 +102,34 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
               <div className="flex items-start gap-2 mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Retorno Esperado Anual</h3>
                 <InfoTooltip
-                  title="Retorno Esperado Anual"
-                  description="Estimación del rendimiento anual de tu portafolio basada en tu perfil y los activos seleccionados. Es una proyección informativa y no una garantía de resultado."
-                  example="Por ejemplo, 24.96% sugiere un posible crecimiento anual en el rango estimado."
+                  title="Retorno Esperado"
+                  description="Ganancia promedio estimada por año basada en datos históricos. NO es una garantía, es una proyección informativa."
+                  example="Si inviertes $10,000 con retorno 24.96%, esperas ~$2,496 en ganancia. Pero podría ser menos en años malos."
                 />
               </div>
               <p className="text-4xl sm:text-5xl font-bold text-blue-900">{(metrics.expected_return * 100).toFixed(2)}%</p>
+              <p className="text-sm text-gray-600 mt-3">⚠️ Estimación basada en historiales, no garantía futura</p>
+              <div className="mt-4 bg-blue-50 p-3 rounded border border-blue-200 text-sm text-gray-700">
+                <p className="font-medium">Ejemplo con $10,000:</p>
+                <p>Ganancia esperada anual: ${(10000 * metrics.expected_return).toFixed(0)}</p>
+                <p className="text-xs text-gray-600 mt-1">Valor en 1 año: ~${(10000 + 10000 * metrics.expected_return).toFixed(0)}</p>
+              </div>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
               <div className="flex items-start gap-2 mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Nivel de Riesgo</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Volatilidad (Cambios de Precio)</h3>
                 <InfoTooltip
-                  title="Nivel de Riesgo"
-                  description="Mide la volatilidad esperada de tu portafolio. Un número más alto indica que el valor puede subir o bajar con mayor amplitud."
-                  example="Por ejemplo, 9.91% refleja una volatilidad anualizada estimada en el portafolio."
+                  title="Volatilidad"
+                  description="Cuánto fluctúa tu portafolio típicamente. No significa pérdida permanente, solo cambios de precio normales en el mercado."
+                  example="Volatilidad 9.91% significa cambios típicos de ±10% en el año. En un mes podría bajar 2%, luego subir 3%, etc."
                 />
               </div>
               <p className="text-4xl sm:text-5xl font-bold text-orange-600">{(metrics.risk * 100).toFixed(2)}%</p>
+              <div className="mt-4 bg-orange-50 p-3 rounded border border-orange-200 text-sm text-gray-700">
+                <p className="font-medium">¿Qué significa?</p>
+                <p>Tu inversión típicamente sube/baja ~{(metrics.risk * 100).toFixed(1)}% por año</p>
+                <p className="text-xs text-gray-600 mt-1">En $10,000: cambios típicos de ±${(10000 * metrics.risk).toFixed(0)}</p>
+              </div>
             </div>
             <div className="mt-6">
               <button
@@ -176,13 +187,24 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
               </div>
               <div className="space-y-3 sm:space-y-4 w-full">
                 {mainAssets.map((asset, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row items-center justify-between bg-gray-700 rounded-lg px-3 sm:px-4 py-2 sm:py-3 border border-gray-600 shadow-md gap-2 sm:gap-0">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-3 sm:w-4 h-3 sm:h-4 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                      <span className="text-gray-200 text-sm sm:text-base font-medium">{asset.name}</span>
-                      <span className="text-xs text-gray-400">({asset.ticker})</span>
+                  <div 
+                    key={index} 
+                    className="group relative flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gray-700 hover:bg-gray-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 border border-gray-600 shadow-md gap-2 sm:gap-0 transition duration-200 cursor-help"
+                    title={`${asset.name} - ${asset.allocation_pct?.toFixed(2)}% de tu portafolio`}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                      <div className="w-3 sm:w-4 h-3 sm:h-4 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                      <div className="flex-1">
+                        <span className="text-gray-200 text-sm sm:text-base font-medium">{asset.name}</span>
+                        <span className="text-xs text-gray-400 ml-1">({asset.ticker})</span>
+                      </div>
                     </div>
-                    <span className="text-white font-bold text-base sm:text-lg">{asset.allocation_pct?.toFixed(2) ?? '0.00'}%</span>
+                    <span className="text-white font-bold text-base sm:text-lg flex-shrink-0">{asset.allocation_pct?.toFixed(2) ?? '0.00'}%</span>
+                    {/* Tooltip al hover */}
+                    <div className="pointer-events-none absolute bottom-full left-0 right-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg p-3 whitespace-normal w-48 z-50 border border-gray-600">
+                      <p className="font-semibold mb-1">{asset.name}</p>
+                      <p className="text-gray-300 text-xs">Incluido en tu portafolio para diversificar y balancear riesgo/retorno según tu perfil.</p>
+                    </div>
                   </div>
                 ))}
               </div>

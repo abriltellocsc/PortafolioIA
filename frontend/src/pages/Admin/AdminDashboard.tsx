@@ -3,7 +3,6 @@ import Sidebar from '../../components/admin/Sidebar';
 import UserManagement from './UserManagement';
 import SupportMessages from './SupportMessages';
 import AdminUserLogs from './AdminUserLogs';
-import EducationManagement from './EducationManagement';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -20,8 +19,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         return <SupportMessages />;
       case 'user-logs':
         return <AdminUserLogs />;
-      case 'education':
-        return <EducationManagement />;
       default:
         return <UserManagement />;
     }
