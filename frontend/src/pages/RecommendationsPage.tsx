@@ -11,6 +11,30 @@ interface RecommendationsPageProps {
   portfolio: any;
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          backgroundColor: '#1e40af',
+          border: '2px solid #ffffff',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          boxShadow: '0 6px 12px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', margin: '0' }}>
+          {payload[0].name}
+        </p>
+        <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', margin: '0' }}>
+          {payload[0].value?.toFixed(2)}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) => {
   const experienceLevel = useUserExperienceLevel(portfolio);
 
@@ -256,33 +280,18 @@ const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) 
                         data={pieChartData}
                         cx="50%"
                         cy="50%"
-                        label={({ percent }) => (percent ? `${(percent * 100).toFixed(0)}%` : '')}
+                        label={({ value }) => `${(typeof value === 'number' ? value : parseFloat(value)).toFixed(2)}%`}
                         labelLine={false}
                         outerRadius={110}
                         fill="#8884d8"
                         dataKey="value"
+                        labelStyle={{ fill: '#ffffff', fontWeight: 'bold', fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                       >
                         {pieChartData.map((_entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1e40af',
-                          border: '2px solid #ffffff',
-                          borderRadius: '8px',
-                          color: '#ffffff',
-                          fontWeight: 'bold',
-                          padding: '8px 12px',
-                          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.2)',
-                        }}
-                        formatter={(value) => {
-                          const v = Array.isArray(value) ? value[0] : value;
-                          const num = typeof v === 'number' ? v : parseFloat(v);
-                          return isNaN(num) ? String(v) : num.toFixed(2) + '%';
-                        }}
-                        labelStyle={{ color: '#ffffff', fontWeight: 'bold' }}
-                      />
+                      <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
