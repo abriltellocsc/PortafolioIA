@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import auth, portfolio, profile, stocks, usuarios
 from app.routes import admin_users, admin_portfolios, admin_support, admin_logs, admin_education
+from app.routes import education
 from app.database import Base, engine  # Importar para referencias
 
 # Las tablas se crean con Alembic, no aquí
@@ -37,6 +38,8 @@ app.include_router(admin_portfolios.router, prefix="/api", tags=["Admin Portafol
 app.include_router(admin_support.router, prefix="/api", tags=["Admin Soporte"])
 app.include_router(admin_logs.router, prefix="/api", tags=["Admin Logs"])
 app.include_router(admin_education.router, prefix="/api", tags=["Admin Educación"])
+app.include_router(education.router, prefix="/api", tags=["Educación"])
+
 ## app.include_router(admin_config.router, prefix="/api", tags=["Admin Configuración"])
 
 @app.get("/test", tags=["Test"])

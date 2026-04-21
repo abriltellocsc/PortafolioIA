@@ -1,9 +1,13 @@
 import React from 'react';
 
 interface EducationalTooltipProps {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   example?: string;
+  term?: string;
+  explanation?: string;
+  examples?: string[];
+  inline?: boolean;
 }
 
 const EducationalTooltip: React.FC<EducationalTooltipProps> = ({ title, description, example }) => {
@@ -34,4 +38,5 @@ const EducationalTooltip: React.FC<EducationalTooltipProps> = ({ title, descript
   );
 };
 
+export { EducationalTooltip };
 export default EducationalTooltip;

@@ -1,16 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { adminFetchEducation, adminCreateEducation, adminUpdateEducation, adminDeleteEducation } from "../../services/api";
 
+interface EditForm {
+  category?: string;
+  title?: string;
+  summary?: string;
+  tags?: string;
+  full_content?: string;
+  is_active?: boolean;
+}
+
 const EducationManagement = () => {
   const [contents, setContents] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterActive, setFilterActive] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState("Básico");
+  const [filterActive, setFilterActive] = useState<string>("true");
+  const [filterDate, setFilterDate] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalContents, setTotalContents] = useState(0);
   const [editingContent, setEditingContent] = useState<any | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
+  const [editForm, setEditForm] = useState<EditForm>({});
   const [creatingContent, setCreatingContent] = useState(false);
   const [createForm, setCreateForm] = useState({
     category: "",
@@ -24,17 +34,27 @@ const EducationManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const categories = ["Básico", "Intermedio", "Avanzado", "Estrategias", "Economía"];
+  const categories = ["Básico", "Intermedio", "Avanzado", "Economía", "Estrategias"];
 
   const fetchContents = () => {
     setLoading(true);
-    adminFetchEducation({
+    const params: any = {
       page: currentPage,
       page_size: 10,
-      category: filterCategory || undefined,
-      search: search || undefined,
-      is_active: filterActive === "" ? undefined : filterActive === "true"
-    })
+      is_active: filterActive === "false" ? false : true
+    };
+    
+    if (filterCategory) {
+      params.category = filterCategory;
+    }
+    
+    if (search) {
+      params.search = search;
+    }
+    
+    console.log("Enviando parámetros:", params);
+    
+    adminFetchEducation(params)
       .then((res) => {
         setContents(res.data.contents || []);
         setTotalContents(res.data.total || 0);
@@ -49,7 +69,7 @@ const EducationManagement = () => {
 
   useEffect(() => {
     fetchContents();
-  }, [currentPage, filterCategory, filterActive, search]);
+  }, [currentPage, filterCategory, filterActive, search, filterDate]);
 
   const handleEdit = (content: any) => {
     setEditingContent(content);
@@ -68,7 +88,7 @@ const EducationManagement = () => {
 
     const data = {
       ...editForm,
-      tags: editForm.tags.split(",").map((tag: string) => tag.trim()).filter((tag: string) => tag)
+      tags: editForm.tags?.split(",").map((tag: string) => tag.trim()).filter((tag: string) => tag) || []
     };
 
     adminUpdateEducation(editingContent.id.toString(), data)
@@ -111,6 +131,19 @@ const EducationManagement = () => {
       });
   };
 
+  const handleToggleActive = (content: any) => {
+    adminUpdateEducation(content.id.toString(), { is_active: !content.is_active })
+      .then(() => {
+        setSuccessMsg(content.is_active ? "Contenido desactivado exitosamente" : "Contenido activado exitosamente");
+        fetchContents();
+        setTimeout(() => setSuccessMsg(null), 3000);
+      })
+      .catch(() => {
+        setError("Error al cambiar estado del contenido");
+        setTimeout(() => setError(null), 3000);
+      });
+  };
+
   const handleDelete = (contentId: string) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este contenido?")) return;
 
@@ -137,7 +170,7 @@ const EducationManagement = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Contenido Educativo</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Gestión de Educación</h2>
         <button
           onClick={() => setCreatingContent(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
@@ -160,7 +193,7 @@ const EducationManagement = () => {
 
       {/* Filtros */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
             <input
@@ -178,7 +211,6 @@ const EducationManagement = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Todas</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -191,17 +223,26 @@ const EducationManagement = () => {
               onChange={(e) => setFilterActive(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Todos</option>
               <option value="true">Activo</option>
               <option value="false">Inactivo</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           <div className="flex items-end">
             <button
               onClick={() => {
                 setSearch("");
-                setFilterCategory("");
-                setFilterActive("");
+                setFilterCategory("Básico");
+                setFilterActive("true");
+                setFilterDate("");
                 setCurrentPage(1);
               }}
               className="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
@@ -263,16 +304,17 @@ const EducationManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => handleEdit(content)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      onClick={() => handleToggleActive(content)}
+                      className={`mr-3 ${content.is_active ? 'text-yellow-600 hover:text-yellow-800' : 'text-green-600 hover:text-green-800'}`}
+                      title={content.is_active ? 'Desactivar' : 'Activar'}
                     >
-                      <i className="fas fa-edit"></i> Editar
+                      <i className={`fas ${content.is_active ? 'fa-eye-slash' : 'fa-eye'}`}></i> {content.is_active ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
-                      onClick={() => handleDelete(content.id.toString())}
-                      className="text-red-600 hover:text-red-900"
+                      onClick={() => handleEdit(content)}
+                      className="text-indigo-600 hover:text-indigo-900"
                     >
-                      <i className="fas fa-trash"></i> Eliminar
+                      <i className="fas fa-edit"></i> Editar
                     </button>
                   </td>
                 </tr>
@@ -326,7 +368,7 @@ const EducationManagement = () => {
                   <label className="block text-sm font-medium text-gray-700">Categoría</label>
                   <select
                     value={editForm.category}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
+                    onChange={(e) => setEditForm((prev: EditForm) => ({ ...prev, category: e.target.value }))}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     {categories.map(cat => (
@@ -339,7 +381,7 @@ const EducationManagement = () => {
                   <input
                     type="text"
                     value={editForm.title}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => setEditForm((prev: EditForm) => ({ ...prev, title: e.target.value }))}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
@@ -357,7 +399,7 @@ const EducationManagement = () => {
                   <input
                     type="text"
                     value={editForm.tags}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, tags: e.target.value }))}
+                    onChange={(e) => setEditForm((prev: EditForm) => ({ ...prev, tags: e.target.value }))}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
@@ -365,7 +407,7 @@ const EducationManagement = () => {
                   <label className="block text-sm font-medium text-gray-700">Contenido Completo (HTML)</label>
                   <textarea
                     value={editForm.full_content}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, full_content: e.target.value }))}
+                    onChange={(e) => setEditForm((prev: EditForm) => ({ ...prev, full_content: e.target.value }))}
                     rows={10}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
                   />
@@ -375,7 +417,7 @@ const EducationManagement = () => {
                     <input
                       type="checkbox"
                       checked={editForm.is_active}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                      onChange={(e) => setEditForm((prev: EditForm) => ({ ...prev, is_active: e.target.checked }))}
                       className="mr-2"
                     />
                     Activo

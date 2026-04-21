@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import InfoTooltip from '../components/InfoTooltip';
 import { fetchStockData } from '../services/api';
-import { getChartContext } from '../utils/chartContext';
-import useUserExperienceLevel from '../hooks/useUserExperienceLevel';
+import { ChartInfoIcon } from '../components/ChartInfoIcon';
+import { EducationalTooltip } from '../components/EducationalTooltip';
+import { DataClarityBadge } from '../components/DataClarityBadge';
+import { useUserExperienceLevel } from '../hooks/useUserExperienceLevel';
+import { getChartContext } from '../constants/chartContexts';
 
 interface MyPortfolioPageProps {
   portfolio: any;
@@ -45,8 +48,8 @@ const formatDisplayName = (name?: string) => {
 
 const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
   const performanceData = generatePerformanceData();
-  const experienceLevel = useUserExperienceLevel(portfolio);
-  const performanceDescription = getChartContext('portfolio.performance.description', experienceLevel);
+  const experienceLevel = useUserExperienceLevel();
+  const performanceDescription = getChartContext('portfolio.performance.description', experienceLevel || undefined);
   const [stocksData, setStocksData] = useState<Record<string, StockData>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +100,7 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
   const { assets } = portfolio;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pt-8 pb-24 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pt-8 pb-24 px-4 sm:px-6 lg:px-8" style={{display: 'flex', flexDirection: 'column'}}>
       <div className="max-w-7xl mx-auto">
         {/* Header mejorado */}
         <div className="mb-8">
@@ -133,11 +136,10 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
               <i className="fas fa-chart-line text-blue-900"></i>
               Rendimiento del Portafolio (Últimos 12 Meses)
             </h2>
-            <InfoTooltip
-              title="Rendimiento del Portafolio"
-              description="Este gráfico muestra la evolución simulada del valor de tu portafolio durante los últimos 12 meses. No es un valor real histórico si no datos generados automáticamente."
-              example="Por ejemplo, subidas y bajadas reflejan fluctuaciones posibles basadas en tendencias recientes." 
-            />
+            <div className="flex items-center gap-3">
+              <DataClarityBadge type="simulated" size="sm" />
+              <ChartInfoIcon label={getChartContext('portfolio.performance.title', experienceLevel || undefined)} />
+            </div>
           </div>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart
@@ -157,8 +159,8 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
             <YAxis stroke="#9ca3af" />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#374151',
-                border: '1px solid #4b5563',
+                backgroundColor: '#1a237e',
+                border: '1px solid #0d47a1',
                 borderRadius: '8px',
                 color: '#e5e7eb'
               }}
@@ -172,63 +174,70 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
             />
           </AreaChart>
         </ResponsiveContainer>
+
+        {/* Explanation Text */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-gray-700 leading-relaxed">
+            {getChartContext('portfolio.performance.description', experienceLevel || undefined)}
+          </p>
+        </div>
+
+        {/* Note about simulated data */}
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs text-amber-800">
+            {getChartContext('portfolio.performance.note', experienceLevel || undefined)}
+          </p>
+        </div>
       </div>
 
       {/* Tabla de Holdings */}
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-blue-900 flex items-center gap-2">
-            <i className="fas fa-list text-blue-900"></i>
-            Mis Activos
-          </h2>
-          <InfoTooltip
-            title="Tabla de Activos"
-            description="Muestra cada activo en tu portafolio, cuánto porcentaje ocupan, su precio actual y cómo ha cambiado. Te ayuda a monitorear qué está subiendo o bajando."
-            example="Si BND muestra +0.29 (rojo), significa que subió 29 centavos hoy. Si está en verde, es ganancia."
-          />
+        <h2 className="text-2xl font-semibold text-blue-900 mb-6 flex items-center gap-2">
+          <i className="fas fa-list text-blue-900"></i>
+          Mis Activos
+        </h2>
+        <div className="mb-3 flex gap-2 text-xs text-gray-500">
+          <DataClarityBadge type="real" size="sm" />
+          <span>Precios actuales del mercado</span>
         </div>
-
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-blue-50 border-b border-gray-200">
-                <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-tag"></i>Ticker
-                      </div>
-                      <InfoTooltip title="Ticker" description="Es el código corto que identifica cada activo en el mercado financiero." example="BND = Fondo de Bonos, VOO = Índice de 500 empresas grandes, GLD = Oro" />
-                    </div>
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-percentage"></i>Asignación
-                      </div>
-                      <InfoTooltip title="Asignación" description="El porcentaje de tu dinero que está invertido en este activo." example="Si tienes $10,000 y BND es 44%, tienes $4,400 en bonos" />
-                    </div>
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-dollar-sign"></i>Precio Actual
-                      </div>
-                      <InfoTooltip title="Precio Actual" description="El precio HOY del activo en dólares USD. Se actualiza constantemente." example="VOO: $550.25 significa que cada acción del fondo cuesta ese monto hoy" />
-                    </div>
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 tracking-wider">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-chart-bar"></i>P/L (Cambio Hoy)
-                      </div>
-                      <InfoTooltip title="P/L (Profit/Loss)" description="Ganancia o Pérdida de HOY. Verde = ganancia, Rojo = pérdida" example="Si muestra +1.25, el activo subió $1.25 en el día de hoy" />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {assets.map((asset: any, index: number) => {
+        <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-blue-50 border-b border-gray-200">
+              <tr>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  <i className="fas fa-tag mr-2"></i>Ticker
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <i className="fas fa-percentage mr-1"></i>
+                    <span>Allocación</span>
+                    <EducationalTooltip
+                      term={"Rendimiento Histórico"}
+                      explanation={getChartContext('portfolio.performance.description', experienceLevel || undefined)}
+                      examples={["Ver tu progreso", "Analizar tendencias", "Comparar con objetivos"]}
+                      inline={false}
+                    />
+                  </div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  <i className="fas fa-dollar-sign mr-2"></i>Precio Actual
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <i className="fas fa-chart-bar mr-1"></i>
+                    <span>Cambio Hoy</span>
+                    <EducationalTooltip
+                      term=""
+                      explanation="Cambio de precio de este activo desde el cierre del día anterior. (+) = ganancia, (-) = pérdida."
+                      examples={['Si subió 2.5% = +$25 en una posición de $1,000']}
+                      inline={true}
+                    />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {assets.map((asset: any, index: number) => {
                   const stockData = stocksData[asset.ticker];
                   const realName = stockData?.name || asset.name;
                   const currentPrice = stockData?.current_price || 0;
@@ -288,12 +297,11 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
                     </tr>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
-      </div>
+    </div>
     </div>
   );
 };

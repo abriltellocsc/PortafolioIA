@@ -2,6 +2,7 @@ import React from 'react';
 
 interface DataClarityBadgeProps {
   type?: 'real' | 'simulated' | 'estimated';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const badgeStyles: Record<string, { label: string; color: string }> = {
@@ -21,4 +22,5 @@ const DataClarityBadge: React.FC<DataClarityBadgeProps> = ({ type = 'real' }) =>
   );
 };
 
+export { DataClarityBadge };
 export default DataClarityBadge;

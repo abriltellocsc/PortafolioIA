@@ -3,6 +3,9 @@ import Sidebar from '../../components/admin/Sidebar';
 import UserManagement from './UserManagement';
 import SupportMessages from './SupportMessages';
 import AdminUserLogs from './AdminUserLogs';
+import EducationManagement from './EducationManagement';
+import PortfolioManagement from './PortfolioManagement';
+import AdminLogs from './AdminLogs';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -19,6 +22,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         return <SupportMessages />;
       case 'user-logs':
         return <AdminUserLogs />;
+      case 'education':
+        return <EducationManagement />;
+      case 'portfolios':
+        return <PortfolioManagement />;
+      case 'logs':
+        return <AdminLogs />;
       default:
         return <UserManagement />;
     }

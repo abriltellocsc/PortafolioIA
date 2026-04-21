@@ -129,7 +129,10 @@ export const adminUpdateConfig = (data: any) => api.put('/admin/config', data);
 // Logs
 export const adminFetchLogs = (params?: any) => api.get('/admin/logs', { params });
 
-// Educación
+// Educación (público)
+export const fetchPublicEducation = (params?: any) => api.get('/education', { params });
+
+// Educación (admin)
 export const adminFetchEducation = (params?: any) => api.get('/admin/education', { params });
 export const adminGetEducation = (contentId: string) => api.get(`/admin/education/${contentId}`);
 export const adminCreateEducation = (data: any) => api.post('/admin/education', data);
