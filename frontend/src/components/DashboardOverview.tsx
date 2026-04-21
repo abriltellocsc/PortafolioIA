@@ -19,6 +19,30 @@ interface DashboardOverviewProps {
   isUserPremium?: boolean;
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          backgroundColor: '#1e40af',
+          border: '2px solid #ffffff',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          boxShadow: '0 6px 12px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', margin: '0' }}>
+          {payload[0].name}
+        </p>
+        <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', margin: '0' }}>
+          {payload[0].value?.toFixed(2)}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUserPremium }) => {
   const navigate = useNavigate();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -152,6 +176,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
                       data={chartData}
                       cx="50%"
                       cy="50%"
+                      label={({ value }) => `${(typeof value === 'number' ? value : parseFloat(value)).toFixed(2)}%`}
                       labelLine={false}
                       label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value }) => {
                         if (midAngle === undefined || name === undefined) return null;
@@ -204,6 +229,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
+                      labelStyle={{ fill: '#ffffff', fontWeight: 'bold', fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                     >
                       {chartData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

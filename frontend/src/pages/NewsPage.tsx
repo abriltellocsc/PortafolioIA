@@ -68,7 +68,7 @@ const NewsItemCard: React.FC<NewsItemProps> = ({ news }) => {
 const NewsPage: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>('Mercados');
 
   // Noticias de ejemplo con URLs reales de Google News
   const mockNews: NewsItem[] = [
@@ -264,16 +264,6 @@ const NewsPage: React.FC = () => {
           </h3>
           <div className="flex flex-wrap gap-3">
             <button 
-              onClick={() => setFilter('all')}
-              className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
-                filter === 'all' 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-blue-200 hover:border-blue-600'
-              }`}
-            >
-              <i className="fas fa-th mr-2"></i>Todas
-            </button>
-            <button 
               onClick={() => setFilter('Mercados')}
               className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
                 filter === 'Mercados' 
@@ -318,8 +308,8 @@ const NewsPage: React.FC = () => {
 
         {/* Grid de noticias */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {news.filter(item => filter === 'all' || item.category === filter).length > 0 ? (
-            news.filter(item => filter === 'all' || item.category === filter).map((item, index) => (
+          {news.filter(item => item.category === filter).length > 0 ? (
+            news.filter(item => item.category === filter).map((item, index) => (
               <NewsItemCard 
                 key={index} 
                 news={item}

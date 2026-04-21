@@ -348,7 +348,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           {/* Monto Inicial */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label htmlFor="amount" className="block text-sm font-semibold text-gray-200 flex items-center gap-2">
+              <label htmlFor="amount" className="block text-sm font-semibold text-black flex items-center gap-2">
                 <i className="fas fa-dollar-sign text-blue-600"></i>
                 Monto Inicial
               </label>
@@ -370,7 +370,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
                 background: `linear-gradient(to right, #1e88e5 0%, #1e88e5 ${((amount - 1000) / (100000 - 1000)) * 100}%, #e6eef8 ${((amount - 1000) / (100000 - 1000)) * 100}%, #e6eef8 100%)`
               }}
             />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <div className="flex justify-between text-xs text-gray-900 mt-1">
               <span>$1,000</span>
               <span>$100,000</span>
             </div>
@@ -379,7 +379,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           {/* Horizonte de Inversión */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label htmlFor="horizon" className="block text-sm font-semibold text-gray-200 flex items-center gap-2">
+              <label htmlFor="horizon" className="block text-sm font-semibold text-black flex items-center gap-2">
                 <i className="fas fa-calendar-alt text-blue-600"></i>
                 Horizonte
               </label>
@@ -401,7 +401,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
                 background: `linear-gradient(to right, #1e88e5 0%, #1e88e5 ${((horizon - 6) / (60 - 6)) * 100}%, #e6eef8 ${((horizon - 6) / (60 - 6)) * 100}%, #e6eef8 100%)`
               }}
             />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <div className="flex justify-between text-xs text-gray-900 mt-1">
               <span>6 meses</span>
               <span>5 años</span>
             </div>
@@ -410,7 +410,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           {/* Aversión al Riesgo */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label htmlFor="riskAversion" className="block text-sm font-semibold text-gray-200 flex items-center gap-2">
+              <label htmlFor="riskAversion" className="block text-sm font-semibold text-black flex items-center gap-2">
                 <i className="fas fa-shield-alt text-amber-400"></i>
                 <span className="flex items-center gap-2">
                   Tolerancia al Riesgo
@@ -434,7 +434,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
                 background: `linear-gradient(to right, #1e88e5 0%, #1e88e5 ${riskAversion}%, #e6eef8 ${riskAversion}%, #e6eef8 100%)`
               }}
             />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <div className="flex justify-between text-xs text-gray-900 mt-1">
               <span>Conservador</span>
               <span>Agresivo</span>
             </div>
@@ -445,7 +445,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
             <>
               {/* Aporte Mensual */}
               <div className="pt-4 border-t border-gray-600">
-                <label htmlFor="monthlyContribution" className="block text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
+                <label htmlFor="monthlyContribution" className="block text-sm font-semibold text-black mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <i className="fas fa-piggy-bank text-cyan-400"></i>
                     Aporte Mensual
@@ -463,7 +463,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
                     background: `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${(monthlyContribution / 5000) * 100}%, #4b5563 ${(monthlyContribution / 5000) * 100}%, #4b5563 100%)`
                   }}
                 />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <div className="flex justify-between text-xs text-gray-900 mt-1">
                   <span>$0</span>
                   <span>$5,000</span>
                 </div>
@@ -471,7 +471,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
 
               {/* Tasa de Inflación */}
               <div>
-                <label htmlFor="inflationRate" className="block text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
+                <label htmlFor="inflationRate" className="block text-sm font-semibold text-black mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <i className="fas fa-percentage text-purple-400"></i>
                     Inflación Anual

@@ -16,6 +16,30 @@ interface RecommendationsPageProps {
   portfolio: any;
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          backgroundColor: '#1e40af',
+          border: '2px solid #ffffff',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          boxShadow: '0 6px 12px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', margin: '0' }}>
+          {payload[0].name}
+        </p>
+        <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', margin: '0' }}>
+          {payload[0].value?.toFixed(2)}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) => {
   const experienceLevel = useUserExperienceLevel();
   const recommendationDescription = getChartContext('recommendations.description', experienceLevel || undefined);
