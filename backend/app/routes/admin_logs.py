@@ -5,6 +5,7 @@ from app.models.user import User
 from app.routes.auth import require_admin
 from sqlalchemy.orm import Session
 from sqlalchemy import join, or_
+from datetime import datetime
 
 router = APIRouter(prefix="/admin/logs", tags=["admin-logs"])
 
@@ -26,6 +27,9 @@ async def list_logs(
     page: int = 1,
     page_size: int = 10,
     user_area: bool = False,
+    action: str = None,
+    desde: str = None,
+    hasta: str = None,
     current_user=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
@@ -39,6 +43,25 @@ async def list_logs(
                 AuditLog.accion.ilike("%AUTH%")
             )
         )
+    
+    if action:
+        query = query.filter(AuditLog.accion.ilike(f"%{action}%"))
+    
+    if desde:
+        try:
+            desde_dt = datetime.fromisoformat(desde)
+            query = query.filter(AuditLog.fecha >= desde_dt)
+        except ValueError:
+            pass
+    
+    if hasta:
+        try:
+            hasta_dt = datetime.fromisoformat(hasta)
+            # Agregar un día para incluir todo el día
+            hasta_dt = hasta_dt.replace(hour=23, minute=59, second=59)
+            query = query.filter(AuditLog.fecha <= hasta_dt)
+        except ValueError:
+            pass
 
     total = query.count()
     total_pages = max(1, (total + page_size - 1) // page_size)

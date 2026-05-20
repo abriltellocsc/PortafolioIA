@@ -76,6 +76,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def send_reset_email(to_email: str, token: str):
+    print(f"\n🔄 Intentando enviar email de recuperación a {to_email}")
+    
     msg = EmailMessage()
     msg["Subject"] = "Recuperación de contraseña - PortafolioIA"
     msg["From"] = "no-reply@portafolioai.com"
@@ -106,19 +108,38 @@ Equipo PortafolioIA
         smtp_port = int(os.getenv("SMTP_PORT", "587"))
         smtp_user = os.getenv("SMTP_USER")
         smtp_pass = os.getenv("SMTP_PASS")
-        if smtp_user and smtp_pass:
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
+        
+        print(f"📧 SMTP configuración: HOST={smtp_host}, PORT={smtp_port}, USER={smtp_user}")
+        
+        if not smtp_user or not smtp_pass:
+            print(f"⚠️ SMTP no configurado: USER={smtp_user}, PASS={'***' if smtp_pass else 'NONE'}")
+            return False
+        
+        print(f"🔐 Conectando a SMTP...")
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            server.starttls()
+            print(f"🔓 TLS iniciado, autenticando...")
+            server.login(smtp_user, smtp_pass)
+            print(f"✅ Autenticado")
+            server.send_message(msg)
             print(f"✅ Email de recuperación enviado a {to_email}")
-        else:
-            print(f"⚠️ SMTP no configurado, email no enviado a {to_email}")
+            return True
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ Error de autenticación SMTP: {e}")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ Error SMTP: {e}")
+        return False
     except Exception as e:
-        print(f"❌ Error enviando email de recuperación: {e}")
+        print(f"❌ Error enviando email de recuperación: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def send_verification_email(to_email: str, token: str):
+    print(f"\n🔄 Intentando enviar email de verificación a {to_email}")
+    
     msg = EmailMessage()
     msg["Subject"] = "Verifica tu cuenta en PortafolioIA"
     msg["From"] = "no-reply@portafolioai.com"
@@ -149,17 +170,34 @@ Equipo PortafolioIA
         smtp_port = int(os.getenv("SMTP_PORT", "587"))
         smtp_user = os.getenv("SMTP_USER")
         smtp_pass = os.getenv("SMTP_PASS")
-        if smtp_user and smtp_pass:
-            smtp = smtplib.SMTP(smtp_host, smtp_port)
-            smtp.starttls()
-            smtp.login(smtp_user, smtp_pass)
-            smtp.send_message(msg)
-            smtp.quit()
+        
+        print(f"📧 SMTP configuración: HOST={smtp_host}, PORT={smtp_port}, USER={smtp_user}")
+        
+        if not smtp_user or not smtp_pass:
+            print(f"⚠️ SMTP no configurado: USER={smtp_user}, PASS={'***' if smtp_pass else 'NONE'}")
+            print(f"ℹ️ Enlace de verificación (solo para dev): {verify_link}")
+            return False
+        
+        print(f"🔐 Conectando a SMTP...")
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            server.starttls()
+            print(f"🔓 TLS iniciado, autenticando...")
+            server.login(smtp_user, smtp_pass)
+            print(f"✅ Autenticado")
+            server.send_message(msg)
             print(f"✅ Email de verificación enviado a {to_email}")
-        else:
-            print(f"⚠️ SMTP no configurado. Enlace de verificación: {verify_link}")
+            return True
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ Error de autenticación SMTP: {e}")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ Error SMTP: {e}")
+        return False
     except Exception as e:
-        print(f"❌ Error enviando email de verificación: {e}")
+        print(f"❌ Error enviando email de verificación: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 # ============================================================================
@@ -293,15 +331,24 @@ async def verify_email(token: Optional[str] = None, email: Optional[str] = None,
 
 @router.post("/forgot-password", response_description="Enviar email de recuperación")
 async def forgot_password(data: ForgotPasswordRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    print(f"\n📧 Solicitud de recuperación de contraseña para: {data.email}")
+    
     user = db.query(User).filter(User.email == data.email).first()
     if not user:
+        print(f"⚠️ Usuario no encontrado: {data.email}")
         return {"message": "Si el correo existe, recibirás instrucciones."}
+    
+    print(f"✅ Usuario encontrado: {user.name} ({data.email})")
     reset_token = secrets.token_urlsafe(8)
     reset_exp = datetime.utcnow() + timedelta(hours=1)
     user.reset_token = reset_token
     user.reset_token_exp = reset_exp
     db.commit()
+    
+    print(f"🔑 Token generado y guardado en DB")
+    print(f"📨 Agregando tarea de email a background_tasks...")
     background_tasks.add_task(send_reset_email, data.email, reset_token)
+    
     return {"message": "Si el correo existe, recibirás instrucciones."}
 
 

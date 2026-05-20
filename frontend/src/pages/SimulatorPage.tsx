@@ -274,27 +274,28 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Controles del Simulador (tema profesional) */}
-          <div className="lg:col-span-1 space-y-6 bg-white p-6 rounded-xl border-2 border-blue-100 shadow">
+        {/* FILA 1: PARÁMETROS Y RESULTADOS - 2 COLUMNAS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* COLUMNA 1: PARÁMETROS */}
+          <div className="bg-white p-6 rounded-xl border-2 border-blue-100 shadow space-y-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <i className="fas fa-sliders-h text-blue-600"></i>
                 Parámetros
               </h2>
-              <InfoTooltip
-                title="Parámetros"
-                description="Ajusta el monto, horizonte, riesgo y otros detalles para ver cómo pueden cambiar tus posibles resultados futuros."
-                example="Un mayor horizonte puede aumentar el valor final esperado, pero también el rango de resultados."
-              />
-            </div>
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="text-sm text-blue-600 hover:text-blue-500 font-bold transition-colors"
-              >
-                {showAdvanced ? 'Básico' : 'Avanzado'}
-              </button>
+              <div className="flex items-center gap-2">
+                <InfoTooltip
+                  title="Parámetros"
+                  description="Ajusta el monto, horizonte, riesgo y otros detalles para ver cómo pueden cambiar tus posibles resultados futuros."
+                  example="Un mayor horizonte puede aumentar el valor final esperado, pero también el rango de resultados."
+                />
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="text-xs text-blue-600 hover:text-blue-500 font-bold transition-colors bg-blue-50 px-3 py-1 rounded"
+                >
+                  {showAdvanced ? 'Básico' : 'Avanzado'}
+                </button>
+              </div>
             </div>
 
           {/* Selector de Tipo de Activo (mapeado a tema azul) */}
@@ -505,36 +506,35 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
             <i className="fas fa-sync-alt"></i>
             Nueva Simulación
           </button>
-        </div>
+          </div>
 
-        {/* Resultados del Simulador - Panel Ampliado */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Métricas principales (tarjetas claras) */}
+          {/* COLUMNA 2: RESULTADOS PROYECTADOS */}
           <div className="bg-white p-6 rounded-xl border-2 border-blue-100 shadow">
             <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <i className="fas fa-chart-bar text-blue-600"></i>
+                Resultados Proyectados
+              </h2>
+              <InfoTooltip
+                title="Resultados Proyectados"
+                description="Muestra el valor promedio, ganancia estimada y los posibles mejores y peores escenarios según tu configuración."
+                example="El escenario optimista representa el percentil 95 de 100 simulaciones."
+              />
+            </div>
+
+            {/* Badge del activo seleccionado */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                  <i className="fas fa-chart-bar text-blue-600"></i>
-                  Resultados Proyectados
-                </h2>
-                <InfoTooltip
-                  title="Resultados Proyectados"
-                  description="Muestra el valor promedio, ganancia estimada y los posibles mejores y peores escenarios según tu configuración."
-                  example="El escenario optimista representa el percentil 95 de 100 simulaciones."
-                />
-              </div>
-              {/* Badge del activo seleccionado */}
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
-                <i className={`fas ${ASSET_TYPES.find(a => a.id === selectedAsset)?.icon} text-blue-600`}></i>
-                <span className="text-sm font-bold text-slate-900">
-                  {ASSET_TYPES.find(a => a.id === selectedAsset)?.name}
-                </span>
-                <span className="text-xs text-slate-500">
-                  ({ASSET_TYPES.find(a => a.id === selectedAsset)?.ticker})
-                </span>
+                <i className={`fas ${ASSET_TYPES.find(a => a.id === selectedAsset)?.icon} text-blue-600 text-lg`}></i>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{ASSET_TYPES.find(a => a.id === selectedAsset)?.name}</p>
+                  <p className="text-xs text-slate-500">{ASSET_TYPES.find(a => a.id === selectedAsset)?.ticker}</p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Grid de 4 métricas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Valor Final Esperado */}
               <div className="bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-blue-200 transition-all">
                 <div className="flex items-center justify-between mb-4">
@@ -598,7 +598,7 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
             </div>
           </div>
 
-          {/* Métricas avanzadas */}
+          {/* Métricas avanzadas - Solo si está activado "Avanzado" */}
           {showAdvanced && results && (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 shadow">
               <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -648,11 +648,11 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
               </div>
             </div>
           )}
+          </div>
         </div>
-      </div>
 
-        {/* Gráfico de Evolución del Portafolio con 3 Escenarios */}
-        <div className="mt-8 bg-white p-8 rounded-xl border-2 border-blue-100 shadow">
+        {/* FILA 2: GRÁFICO - ANCHO COMPLETO */}
+        <div className="mb-8 bg-white p-8 rounded-xl border-2 border-blue-100 shadow">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
               <i className="fas fa-chart-line text-blue-600"></i>
@@ -785,8 +785,8 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
           </div>
         </div>
 
-        {/* Disclaimer */}
-        <div className="mt-8 bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
+        {/* FILA 3: AVISO IMPORTANTE - ANCHO COMPLETO */}
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
           <div className="flex items-start gap-4">
             <i className="fas fa-exclamation-triangle text-amber-600 text-3xl flex-shrink-0"></i>
             <div>
@@ -797,7 +797,6 @@ const SimulatorPage: React.FC<SimulatorPageProps> = ({ portfolio }) => {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
