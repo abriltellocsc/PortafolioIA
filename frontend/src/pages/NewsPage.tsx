@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fetchNews } from '../services/api';
 
 interface NewsItem {
@@ -65,10 +65,27 @@ const NewsItemCard: React.FC<NewsItemProps> = ({ news }) => {
   );
 };
 
+type NewsApiResponse = {
+  articles?: NewsItem[];
+  source?: string;
+  updated_at?: string;
+};
+
+const NEWS_SECTIONS = [
+  { id: 'Mercados', label: 'Mercados', icon: 'fa-chart-line' },
+  { id: 'Empresas', label: 'Empresas', icon: 'fa-building' },
+  { id: 'Economía', label: 'Economía', icon: 'fa-landmark' },
+  { id: 'Tecnología', label: 'Tecnología', icon: 'fa-microchip' },
+] as const;
+
+type NewsCategory = (typeof NEWS_SECTIONS)[number]['id'];
+
 const NewsPage: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filter, setFilter] = useState<string>('Mercados');
+  const [error, setError] = useState<string | null>(null);
+  const [newsSource, setNewsSource] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<NewsCategory>('Mercados');
 
   // Noticias de ejemplo con URLs reales de Google News
   const mockNews: NewsItem[] = [
@@ -186,27 +203,74 @@ const NewsPage: React.FC = () => {
     }
   ];
 
-  useEffect(() => {
-    const getNews = async () => {
-      try {
-        const response = await fetchNews();
-        // Si la API devuelve datos CON URLs, usarlos; sino usar mock data
-        if (response.data && response.data.length > 0 && response.data[0].url) {
-          setNews(response.data);
-        } else {
-          setNews(mockNews);
+  const parseNewsResponse = (data: NewsItem[] | NewsApiResponse): NewsItem[] => {
+    if (Array.isArray(data)) {
+      return data.filter((item) => item?.title && item?.url);
+    }
+    if (data?.articles?.length) {
+      return data.articles.filter((item) => item?.title && item?.url);
+    }
+    return [];
+  };
+
+  const loadNews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetchNews();
+      const payload = response.data as NewsItem[] | NewsApiResponse;
+      const items = parseNewsResponse(payload);
+      if (items.length > 0) {
+        setNews(items);
+        if (!Array.isArray(payload) && payload.source) {
+          setNewsSource(payload.source);
         }
-      } catch (err) {
-        // En caso de error, usar mock data
-        console.log("Usando noticias de ejemplo", err);
+      } else {
         setNews(mockNews);
-      } finally {
-        setLoading(false);
+        setNewsSource('fallback');
       }
-    };
-    getNews();
+    } catch (err) {
+      console.warn('Error cargando noticias, usando respaldo local', err);
+      setNews(mockNews);
+      setNewsSource('fallback');
+      setError('No se pudo conectar con el servidor. Mostrando noticias de ejemplo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const newsByCategory = useMemo(() => {
+    const grouped: Record<string, NewsItem[]> = {};
+    for (const section of NEWS_SECTIONS) {
+      grouped[section.id] = [];
+    }
+    const validIds = NEWS_SECTIONS.map((s) => s.id);
+    for (const item of news) {
+      const cat =
+        item.category && validIds.includes(item.category as (typeof validIds)[number])
+          ? item.category
+          : 'Mercados';
+      grouped[cat].push(item);
+    }
+    return grouped;
+  }, [news]);
+
+  const activeSection = NEWS_SECTIONS.find((s) => s.id === activeCategory)!;
+  const filteredNews = newsByCategory[activeCategory] ?? [];
+
+  const sourceLabel =
+    newsSource === 'newsapi'
+      ? 'Fuente: NewsAPI (actualizado)'
+      : newsSource === 'rss'
+        ? 'Fuente: RSS en tiempo real'
+        : newsSource === 'fallback'
+          ? 'Fuente: datos de demostración'
+          : '';
 
   if (loading) {
     return (
@@ -220,7 +284,7 @@ const NewsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pt-20 pb-24 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header con diseño mejorado */}
         <div className="text-center mb-12 relative">
@@ -230,9 +294,20 @@ const NewsPage: React.FC = () => {
           <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 bg-clip-text text-transparent relative z-10">
             <i className="fas fa-newspaper mr-4"></i>Noticias Financieras
           </h1>
-          <p className="text-slate-600 text-xl relative z-10 mb-6">
+          <p className="text-slate-600 text-xl relative z-10 mb-2">
             Las últimas actualizaciones del mercado en tiempo real
           </p>
+          {sourceLabel && (
+            <p className="text-sm text-blue-700 relative z-10 mb-6">
+              <i className="fas fa-rss mr-2"></i>
+              {sourceLabel}
+            </p>
+          )}
+          {error && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 relative z-10 mb-4 max-w-xl mx-auto">
+              {error}
+            </p>
+          )}
           
           {/* Indicadores de mercado */}
           <div className="flex items-center justify-center gap-6 flex-wrap">
@@ -257,68 +332,78 @@ const NewsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filtros de categoría */}
-        <div className="mb-12 bg-white p-6 rounded-xl shadow-lg border-2 border-blue-200">
+        {/* Filtro por categoría */}
+        <div className="mb-8 bg-white p-6 rounded-xl shadow-lg border-2 border-blue-200">
           <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wider mb-4">
             <i className="fas fa-filter mr-2"></i>Categorías
           </h3>
           <div className="flex flex-wrap gap-3">
-            <button 
-              onClick={() => setFilter('Mercados')}
-              className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
-                filter === 'Mercados' 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-blue-200 hover:border-blue-600'
-              }`}
-            >
-              <i className="fas fa-chart-line mr-2"></i>Mercados
-            </button>
-            <button 
-              onClick={() => setFilter('Empresas')}
-              className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
-                filter === 'Empresas' 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-blue-200 hover:border-blue-600'
-              }`}
-            >
-              <i className="fas fa-building mr-2"></i>Empresas
-            </button>
-            <button 
-              onClick={() => setFilter('Economía')}
-              className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
-                filter === 'Economía' 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-blue-200 hover:border-blue-600'
-              }`}
-            >
-              <i className="fas fa-landmark mr-2"></i>Economía
-            </button>
-            <button 
-              onClick={() => setFilter('Tecnología')}
-              className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
-                filter === 'Tecnología' 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-blue-200 hover:border-blue-600'
-              }`}
-            >
-              <i className="fas fa-microchip mr-2"></i>Tecnología
-            </button>
+            {NEWS_SECTIONS.map((section) => {
+              const count = newsByCategory[section.id]?.length ?? 0;
+              const isActive = activeCategory === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveCategory(section.id)}
+                  className={`px-6 py-3 rounded-full font-bold transform hover:scale-105 transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-blue-200 hover:border-blue-600'
+                  }`}
+                >
+                  <i className={`fas ${section.icon} mr-2`}></i>
+                  {section.label}
+                  <span
+                    className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                      isActive ? 'bg-white/20' : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Grid de noticias */}
+        {/* Noticias de la categoría seleccionada */}
+        <div className="mb-6 flex items-center justify-between pb-3 border-b-2 border-blue-200">
+          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
+              <i className={`fas ${activeSection.icon} text-white`}></i>
+            </span>
+            {activeSection.label}
+          </h2>
+          <span className="text-sm font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            {filteredNews.length} {filteredNews.length === 1 ? 'noticia' : 'noticias'}
+          </span>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {news.filter(item => item.category === filter).length > 0 ? (
-            news.filter(item => item.category === filter).map((item, index) => (
-              <NewsItemCard 
-                key={index} 
-                news={item}
-              />
+          {filteredNews.length > 0 ? (
+            filteredNews.map((item, index) => (
+              <NewsItemCard key={`${activeCategory}-${item.url}-${index}`} news={item} />
             ))
+          ) : news.length > 0 ? (
+            <div className="col-span-2 text-center py-20 bg-white rounded-xl border border-blue-100">
+              <i className="fas fa-inbox text-6xl text-slate-300 mb-4"></i>
+              <p className="text-xl text-slate-500">
+                No hay noticias en {activeSection.label} por el momento.
+              </p>
+              <p className="text-sm text-slate-400 mt-2">Prueba otra categoría en el filtro superior.</p>
+            </div>
           ) : (
             <div className="col-span-2 text-center py-20">
               <i className="fas fa-inbox text-6xl text-slate-300 mb-4"></i>
-              <p className="text-xl text-slate-500">No hay noticias disponibles en este momento</p>
+              <p className="text-xl text-slate-500 mb-4">No hay noticias disponibles en este momento</p>
+              <button
+                type="button"
+                onClick={loadNews}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Actualizar noticias
+              </button>
             </div>
           )}
         </div>

@@ -155,8 +155,15 @@ const MyPortfolioPage: React.FC<MyPortfolioPageProps> = ({ portfolio }) => {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-            <XAxis dataKey="name" stroke="#9ca3af" />
-            <YAxis stroke="#9ca3af" />
+            <XAxis
+              dataKey="name"
+              stroke="#374151"
+              tick={{ fill: '#111827' }}
+            />
+            <YAxis
+              stroke="#374151"
+              tick={{ fill: '#111827' }}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#1a237e',

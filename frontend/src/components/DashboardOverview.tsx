@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { renderPieChartSliceLabel } from '../utils/chartLabels';
 import { ChartInfoIcon } from '../components/ChartInfoIcon';
 import { EducationalTooltip } from './EducationalTooltip';
 import { useUserExperienceLevel } from '../hooks/useUserExperienceLevel';
-import { getChartContext, getChartContextByRisk } from '../constants/chartContexts';
+import { getChartContextByRisk } from '../utils/chartContext';
 import { normalizeRiskLevel } from '../utils/riskUtils';
 
 
@@ -77,7 +78,12 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
   const metrics = portfolio.metrics ?? { expected_return: 0, risk: 0 };
   const assets = portfolio.assets ?? [];
   const riskLevel = normalizeRiskLevel(portfolio?.profile?.risk_level ?? portfolio?.risk_level ?? 'medium');
-  const chartDescription = getChartContextByRisk('dashboard.distribution.description', riskLevel, experienceLevel || undefined);
+  const experienceForCopy = experienceLevel ?? 'intermediate';
+  const chartDescription = getChartContextByRisk(
+    'dashboard.distribution.description',
+    riskLevel,
+    experienceForCopy
+  );
   const dataType = portfolio?.is_simulated ? 'simulated' : 'real';
   
   // Debug logging
@@ -166,7 +172,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
             <div className="flex items-center gap-2 mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Distribución de Activos Recomendados</h3>
-              <ChartInfoIcon label={getChartContext('dashboard.distribution.title', experienceLevel || undefined)} />
+              <ChartInfoIcon
+                label={getChartContextByRisk('dashboard.distribution.description', riskLevel, experienceForCopy)}
+              />
             </div>
             <div className="flex flex-col items-center gap-6">
               <div className="h-64 w-full">
@@ -176,60 +184,11 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
                       data={chartData}
                       cx="50%"
                       cy="50%"
-                      label={({ value }) => `${(typeof value === 'number' ? value : parseFloat(value)).toFixed(2)}%`}
                       labelLine={false}
-                      label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value }) => {
-                        if (midAngle === undefined || name === undefined) return null;
-                        
-                        const RADIAN = Math.PI / 180;
-                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                        
-                        const displayValue = typeof value === 'number' ? value.toFixed(1) : value;
-                        const shortName = name.length > 15 ? name.substring(0, 12) + '...' : name;
-                        const showFullLabel = value > 5;
-                        
-                        return (
-                          <g>
-                            <text 
-                              x={x} 
-                              y={y} 
-                              fill="white" 
-                              textAnchor={x > cx ? 'start' : 'end'} 
-                              dominantBaseline="central"
-                              fontSize="14"
-                              fontWeight="bold"
-                              paintOrder="stroke"
-                              stroke="#1a1a1a"
-                              strokeWidth="0.5"
-                            >
-                              {showFullLabel ? `${shortName}` : `${displayValue}%`}
-                            </text>
-                            
-                            {showFullLabel && (
-                              <text 
-                                x={x} 
-                                y={y + 16} 
-                                fill="white" 
-                                textAnchor={x > cx ? 'start' : 'end'} 
-                                dominantBaseline="central"
-                                fontSize="13"
-                                fontWeight="600"
-                                paintOrder="stroke"
-                                stroke="#1a1a1a"
-                                strokeWidth="0.4"
-                              >
-                                {displayValue}%
-                              </text>
-                            )}
-                          </g>
-                        );
-                      }}
+                      label={renderPieChartSliceLabel}
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
-                      labelStyle={{ fill: '#ffffff', fontWeight: 'bold', fontSize: 12, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                     >
                       {chartData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -256,7 +215,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
                         return isNaN(num) ? String(v) : num.toFixed(2) + '%';
                       }}
                       cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-                      labelFormatter={() => getChartContext('dashboard.distribution.tooltip', experienceLevel || undefined)}
+                      labelFormatter={() =>
+                        getChartContextByRisk('dashboard.distribution.description', riskLevel, experienceForCopy)
+                      }
                       labelStyle={{ color: '#003366', fontWeight: '900', fontSize: '16px', marginBottom: '8px', display: 'block' }}
                       wrapperStyle={{ outline: 'none' }}
                     />
@@ -264,11 +225,12 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ portfolio, isUser
                 </ResponsiveContainer>
               </div>
               
-              {/* Explanation Text */}
+              {/* Texto educativo: explica la torta según riesgo y experiencia del usuario */}
               <div className="w-full bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {getChartContextByRisk('dashboard.distribution.description', riskLevel, experienceLevel || undefined)}
+                <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-2">
+                  ¿Qué significa este gráfico?
                 </p>
+                <p className="text-sm text-gray-700 leading-relaxed">{chartDescription}</p>
               </div>
 
               <div className="space-y-3 sm:space-y-4 w-full">

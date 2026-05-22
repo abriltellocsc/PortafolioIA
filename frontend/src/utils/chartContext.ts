@@ -56,6 +56,37 @@ const chartContext: Record<string, Record<ExperienceLevel, string>> = {
       'La proyección muestra distintos escenarios de retorno según la volatilidad y horizonte elegido. Úsala para comparar riesgos y definir expectativas realistas.',
     advanced:
       'Monte Carlo-style projection using assumed return and volatility. Helps visualize optimistic, expected, and pessimistic scenarios for planning.'
+  },
+  'simulator.projection.badge': {
+    beginner:
+      'Datos simulados con Monte Carlo (100 escenarios). Las líneas muestran el rango posible de tu inversión.',
+    intermediate:
+      'Proyección Monte Carlo con percentiles 10, 50 y 90. No garantiza resultados futuros; sirve para planificar.',
+    advanced:
+      'Simulated paths (n=100). Bands approximate P10/P50/P90 terminal wealth under stated return and volatility assumptions.'
+  },
+  'simulator.projection.percentileInfo': {
+    beginner:
+      'La línea azul es el escenario más probable (promedio). La verde es optimista y la roja punteada es pesimista.',
+    intermediate:
+      'Escenario esperado = media de simulaciones. Optimista ≈ percentil 90; pesimista ≈ percentil 10 del valor final.',
+    advanced:
+      'Expected line: mean path. Optimistic/pessimistic lines map to ~P90/P10 of terminal portfolio value across runs.'
+  },
+  'simulator.projection.lineOptimistic': {
+    beginner: 'Línea verde: si el mercado va muy bien, tu inversión podría llegar a este nivel.',
+    intermediate: 'Percentil 90: solo 1 de cada 10 simulaciones supera este resultado (escenario favorable).',
+    advanced: 'Upper band (~P90): favorable tail outcome; not a forecast, a stress-case upside.'
+  },
+  'simulator.projection.lineExpected': {
+    beginner: 'Línea azul: resultado típico según los parámetros que elegiste (promedio de escenarios).',
+    intermediate: 'Trayectoria media: mejor estimación central con la volatilidad y retorno del activo seleccionado.',
+    advanced: 'Mean path under Gaussian monthly returns; central tendency given inputs, not ex-ante guarantee.'
+  },
+  'simulator.projection.linePessimistic': {
+    beginner: 'Línea roja punteada: si el mercado va mal, podrías quedar cerca de este valor.',
+    intermediate: 'Percentil 10: escenario adverso poco frecuente pero posible; útil para planificar colchón de liquidez.',
+    advanced: 'Lower band (~P10): adverse tail; use for drawdown and liquidity planning, not base case.'
   }
 };
 
@@ -75,10 +106,16 @@ export const getChartContextByRisk = (
   return fallback || 'Información no disponible para este nivel.';
 };
 
-export const getChartContext = (key: string, experienceLevel: ExperienceLevel): string => {
+export const getChartContext = (
+  key: string,
+  experienceLevel?: ExperienceLevel | string | null
+): string => {
+  const level = (experienceLevel === 'beginner' || experienceLevel === 'intermediate' || experienceLevel === 'advanced'
+    ? experienceLevel
+    : 'intermediate') as ExperienceLevel;
   const levelContext = chartContext[key];
-  if (levelContext && levelContext[experienceLevel]) {
-    return levelContext[experienceLevel];
+  if (levelContext && levelContext[level]) {
+    return levelContext[level];
   }
 
   return 'Información no disponible para este nivel.';

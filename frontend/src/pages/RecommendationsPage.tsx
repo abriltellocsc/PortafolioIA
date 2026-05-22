@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { renderPieChartSliceLabel } from '../utils/chartLabels';
 import { ChartInfoIcon } from '../components/ChartInfoIcon';
 import { EducationalTooltip } from '../components/EducationalTooltip';
 import InfoTooltip from '../components/InfoTooltip';
@@ -262,63 +263,7 @@ const RecommendationsPage: React.FC<RecommendationsPageProps> = ({ portfolio }) 
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value }) => {
-                        if (midAngle === undefined || name === undefined) return null;
-                        
-                        const RADIAN = Math.PI / 180;
-                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                        
-                        // Mostrar nombre corto y porcentaje, o solo porcentaje si el segmento es pequeño
-                        const displayValue = typeof value === 'number' ? value.toFixed(1) : value;
-                        const shortName = name.length > 15 ? name.substring(0, 12) + '...' : name;
-                        const showFullLabel = value > 5; // Solo mostrar nombre completo si > 5%
-                        
-                        return (
-                          <g>
-                            {/* Sombra de fondo para mejor legibilidad */}
-                            <filter x="-50%" y="-50%" width="200%" height="200%">
-                              <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
-                            </filter>
-                            
-                            {/* Texto principal mejorado */}
-                            <text 
-                              x={x} 
-                              y={y} 
-                              fill="white" 
-                              textAnchor={x > cx ? 'start' : 'end'} 
-                              dominantBaseline="central"
-                              fontSize="14"
-                              fontWeight="bold"
-                              paintOrder="stroke"
-                              stroke="#1a1a1a"
-                              strokeWidth="0.5"
-                              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
-                            >
-                              {showFullLabel ? `${shortName}` : `${displayValue}%`}
-                            </text>
-                            
-                            {/* Porcentaje en segunda línea si hay espacio */}
-                            {showFullLabel && (
-                              <text 
-                                x={x} 
-                                y={y + 16} 
-                                fill="white" 
-                                textAnchor={x > cx ? 'start' : 'end'} 
-                                dominantBaseline="central"
-                                fontSize="13"
-                                fontWeight="600"
-                                paintOrder="stroke"
-                                stroke="#1a1a1a"
-                                strokeWidth="0.4"
-                              >
-                                {displayValue}%
-                              </text>
-                            )}
-                          </g>
-                        );
-                      }}
+                      label={renderPieChartSliceLabel}
                       outerRadius={140}
                       fill="#8884d8"
                       dataKey="value"

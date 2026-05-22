@@ -240,56 +240,29 @@ async def submit_contact_message(
 
 @router.get("/news", response_description="Get financial news")
 async def get_news(db: Session = Depends(get_db)):
-    # Mock de noticias. En una implementación real, se integraría con una API de noticias.
-    mock_news = [
-        {
-            "source": "Bloomberg",
-            "title": "Mercados Globales Reaccionan a Nuevas Políticas Económicas",
-            "summary": "Analistas observan con cautela los movimientos en las principales bolsas tras los anuncios de la Reserva Federal.",
-            "date": "2023-10-26T10:00:00Z",
-            "url": "https://www.bloomberg.com/markets",
-            "category": "Economía",
-            "author": "Daniel Castro"
-        },
-        {
-            "source": "Reuters",
-            "title": "Innovación en IA Impulsa Acciones Tecnológicas",
-            "summary": "El sector tecnológico muestra un fuerte crecimiento impulsado por avances en inteligencia artificial y semiconductores.",
-            "date": "2023-10-26T09:30:00Z",
-            "url": "https://www.reuters.com/technology/",
-            "category": "Tecnología",
-            "author": "María López"
-        },
-        {
-            "source": "Financial Times",
-            "title": "El Futuro de las Inversiones Sostenibles",
-            "summary": "Cada vez más inversores buscan oportunidades en empresas con sólidos criterios ESG (Ambientales, Sociales y de Gobernanza).",
-            "date": "2023-10-25T15:00:00Z",
-            "url": "https://www.ft.com/sustainable-investing",
-            "category": "Economía",
-            "author": "Laura Martínez"
-        }
-    ]
+    from app.services.news_service import fetch_financial_news
 
-    # Eliminar noticias antiguas antes de guardar las nuevas
-    db.query(NewsArticle).delete()
-    db.commit()
+    articles, source = fetch_financial_news()
 
-    for item in mock_news:
-        article = NewsArticle(
-            source=item["source"],
-            title=item["title"],
-            summary=item["summary"],
-            date=datetime.fromisoformat(item["date"]),
-            url=item["url"],
-            category=item.get("category"),
-            author=item.get("author")
-        )
-        db.add(article)
+    try:
+        db.query(NewsArticle).delete()
+        for item in articles:
+            date_raw = item["date"].replace("Z", "+00:00")
+            article = NewsArticle(
+                source=item["source"],
+                title=item["title"],
+                summary=item["summary"],
+                date=datetime.fromisoformat(date_raw),
+                url=item["url"],
+                category=item.get("category"),
+                author=item.get("author"),
+            )
+            db.add(article)
+        db.commit()
+    except Exception:
+        db.rollback()
 
-    db.commit()
-
-    return mock_news
+    return {"articles": articles, "source": source, "updated_at": datetime.utcnow().isoformat() + "Z"}
 
 ## Endpoint y lógica de chatbot eliminados
 
